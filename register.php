@@ -1,3 +1,8 @@
+<?php
+session_start();
+// Status aus der URL abfragen
+$status = isset($_GET['status']) ? $_GET['status'] : '';
+?>
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -64,6 +69,18 @@
             margin-bottom: 10px;
             display: none;
         }
+        .success-message {
+            color: green;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .error-message-server {
+            color: red;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
@@ -86,13 +103,21 @@
                     <a class="nav-link text-white" href="scoreboard.php"><h5>Scoreboard</h5></a>
                 </li>
                 <li class="nav-item ms-3">
-                    <a class="link-button" href="login-register.php">
-                        <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
-                            Login
-                            <img src="img/benutzerbild.png" alt="User Image" width="20" height="20" class="ms-2">
-                        </button>
-                    </a>
-                </li>
+                        <?php if (isset($_SESSION['user_name'])): ?>
+                            <!-- Eingeloggt: Benutzername anzeigen -->
+                            <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
+                                <?php echo htmlspecialchars($_SESSION['user_name']); ?>
+                            </button>
+                        <?php else: ?>
+                            <!-- Nicht eingeloggt: Login anzeigen -->
+                            <a href="login.php">
+                                <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
+                                    Login
+                                    <img src="img/benutzerbild.png" alt="User Image" width="20" height="20" class="ms-2">
+                                </button>
+                            </a>
+                        <?php endif; ?>
+                    </li>
             </ul>
         </div>
     </div>
@@ -106,6 +131,14 @@
         </div>
         <h1>REGISTRIEREN</h1>
         <h4>ERSTELLE EINEN ACCOUNT</h4>
+
+        <!-- Statusmeldungen -->
+        <?php if ($status === 'success'): ?>
+            <p class="success-message">Registrierung erfolgreich!</p>
+        <?php elseif ($status === 'error'): ?>
+            <p class="error-message-server">Es gab einen Fehler bei der Registrierung. Bitte versuche es erneut.</p>
+        <?php endif; ?>
+
         <form action="process_register.php" method="POST" id="registerForm">
             <div class="mb-3">
                 <input type="text" name="name" class="form-control" placeholder="Name" required>
@@ -128,7 +161,7 @@
 
     <!-- Link zur Anmeldung -->
     <div class="text-center mt-4">
-        <p>Hast du schon einen Account? <a href="login-register.php" class="link-login">Melde dich hier an!</a></p>
+        <p>Hast du schon einen Account? <a href="login.php" class="link-login">Melde dich hier an!</a></p>
     </div>
 </div>
 

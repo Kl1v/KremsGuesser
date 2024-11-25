@@ -1,5 +1,5 @@
 <?php
-
+session_start();
 ?>
 
 <!DOCTYPE html>
@@ -30,11 +30,21 @@
                     <a class="nav-link text-white" href="scoreboard.php"><h5>Scoreboard</h5></a>
                 </li>
                 <li class="nav-item ms-3">
-                    <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
-                        Login
-                        <img src="img/benutzerbild.png" alt="User Image" width="20" height="20" class="ms-2">
-                    </button>
-                </li>
+                        <?php if (isset($_SESSION['user_name'])): ?>
+                            <!-- Eingeloggt: Benutzername anzeigen -->
+                            <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
+                                <?php echo htmlspecialchars($_SESSION['user_name']); ?>
+                            </button>
+                        <?php else: ?>
+                            <!-- Nicht eingeloggt: Login anzeigen -->
+                            <a href="login.php">
+                                <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
+                                    Login
+                                    <img src="img/benutzerbild.png" alt="User Image" width="20" height="20" class="ms-2">
+                                </button>
+                            </a>
+                        <?php endif; ?>
+                    </li>
             </ul>
         </div>
     </div>

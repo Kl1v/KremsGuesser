@@ -7,12 +7,11 @@ $dbname = "kremsguesserdb";
 // Pfad zum SSL-Zertifikat
 
 // Initialisiere MySQLi
-$conn = mysqli_init();
+$conn = new mysqli($servername, $username, $password, $dbname);
 
-// SSL-Einstellungen setzen
-
-// Verbinde ohne Zertifikatsprüfung
-if (!mysqli_real_connect($conn, $servername, $username, $password, $dbname, 3306, NULL, MYSQLI_CLIENT_SSL | MYSQLI_CLIENT_SSL_DONT_VERIFY_SERVER_CERT)) {
-    die("Verbindung fehlgeschlagen: " . mysqli_connect_error());
+// Verbindung überprüfen
+if ($conn->connect_error) {
+    die("Verbindung zur Datenbank fehlgeschlagen: " . $conn->connect_error);
 }
+
 ?>
