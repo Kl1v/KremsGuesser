@@ -1,33 +1,50 @@
 /* Linker Farbverlauf */
 .gradient-left {
-    background: linear-gradient(to bottom, #D8BFD8, #4B0082); /* Helles Lila zu Dunkel */
-    min-height: 100vh; /* Volle Bildschirmhöhe */
-    height: auto; /* Passt sich dem Inhalt an */
+    background: linear-gradient(to bottom, #D8BFD8, #4B0082);
+    /* Helles Lila zu Dunkel */
+    min-height: 100vh;
+    /* Volle Bildschirmhöhe */
+    height: auto;
+    /* Passt sich dem Inhalt an */
 }
 
 /* Rechter Farbverlauf */
 .gradient-right {
-    background: linear-gradient(to bottom, #D8BFD8, #4B0082); /* Dunkel zu Helles Lila */
-    min-height: 100vh; /* Volle Bildschirmhöhe */
-    height: auto; /* Passt sich dem Inhalt an */
+    background: linear-gradient(to bottom, #D8BFD8, #4B0082);
+    /* Dunkel zu Helles Lila */
+    min-height: 100vh;
+    /* Volle Bildschirmhöhe */
+    height: auto;
+    /* Passt sich dem Inhalt an */
 }
 
 /* Dynamische Mitte */
 /* Dynamische Mitte */
 .dynamic-center {
-    position: relative; /* Für die Positionierung des Bildes relativ zur Box */
-    background-color: #2E003E; /* Dunkles Lila */
-    color: white; /* Weißer Text */
-    min-height: 100vh; /* Dynamische Höhe je nach Content */
-    display: flex; /* Flexbox aktivieren */
+    position: relative;
+    /* Für die Positionierung des Bildes relativ zur Box */
+    background-color: #2E003E;
+    /* Dunkles Lila */
+    color: white;
+    /* Weißer Text */
+    min-height: 100vh;
+    /* Dynamische Höhe je nach Content */
+    display: flex;
+    /* Flexbox aktivieren */
     flex-direction: column;
-    justify-content: center; /* Vertikale Zentrierung */
-    align-items: center; /* Horizontale Zentrierung */
-    padding: 0 15px; /* Padding für kleine Abstände auf den Seiten */
-    box-shadow: 0 0 20px 5px rgba(46, 0, 62, 0.7); /* Lila Schatten */
-    z-index: 1; /* Box bleibt über den Farbverläufen */
+    justify-content: center;
+    /* Vertikale Zentrierung */
+    align-items: center;
+    /* Horizontale Zentrierung */
+    padding: 0 15px;
+    /* Padding für kleine Abstände auf den Seiten */
+    box-shadow: 0 0 20px 5px rgba(46, 0, 62, 0.7);
+    /* Lila Schatten */
+    z-index: 1;
+    /* Box bleibt über den Farbverläufen */
 }
-.justify-content-center{
+
+.justify-content-center {
     border-bottom: 2px rgb(106, 0, 118) solid;
 }
 
@@ -35,14 +52,21 @@
 
 /* Stil für den ENTDECKE KREMS! Text */
 .dynamic-center h1 {
-    font-size: 4.5rem; /* Vergrößert die Schriftgröße */
-    font-weight: bold; /* Fettdruck für besseren Kontrast */
-    text-shadow: 2px 2px 10px rgba(128, 0, 128, 0.7); /* Lila Schatten */
-    color: white; /* Textfarbe bleibt weiß */
-    margin-top:220px;
-    margin-bottom: 1rem; /* Abstand nach unten */
-    text-align: center; /* Sicherstellen, dass der Text auch innerhalb des Containers zentriert bleibt */
+    font-size: 4.5rem;
+    /* Vergrößert die Schriftgröße */
+    font-weight: bold;
+    /* Fettdruck für besseren Kontrast */
+    text-shadow: 2px 2px 10px rgba(128, 0, 128, 0.7);
+    /* Lila Schatten */
+    color: white;
+    /* Textfarbe bleibt weiß */
+    margin-top: 220px;
+    margin-bottom: 1rem;
+    /* Abstand nach unten */
+    text-align: center;
+    /* Sicherstellen, dass der Text auch innerhalb des Containers zentriert bleibt */
 }
+
 .dynamic-center h4 {
     font-size: 1.5rem;
     margin-bottom: 2rem;
@@ -51,29 +75,41 @@
 /* Bild hinter dem Text */
 .background-img {
     content: "";
-    position: absolute; /* Absolut innerhalb der dynamic-center Box */
-    top: 0; /* Bildposition oben */
-    left: 50%; /* Horizontal mittig */
-    transform: translateX(-50%); /* Bild zentrieren */
-    width: 75%; /* Breite des Bildes relativ zur Box */
-    height: auto; /* Höhe des Bildes relativ zur Box */
-    opacity: 0.5; /* Leichte Sichtbarkeit */
-    border-radius: 20px; /* Abgerundete Ecken */
-    z-index: -1; /* Bild bleibt hinter dem Text */
+    position: absolute;
+    /* Absolut innerhalb der dynamic-center Box */
+    top: 0;
+    /* Bildposition oben */
+    left: 50%;
+    /* Horizontal mittig */
+    transform: translateX(-50%);
+    /* Bild zentrieren */
+    width: 75%;
+    /* Breite des Bildes relativ zur Box */
+    height: auto;
+    /* Höhe des Bildes relativ zur Box */
+    opacity: 0.5;
+    /* Leichte Sichtbarkeit */
+    border-radius: 20px;
+    /* Abgerundete Ecken */
+    z-index: -1;
+    /* Bild bleibt hinter dem Text */
     margin-top: 10px;
 }
 
 /* Cards */
 .card {
-    border: none !important; /* Ändert den Rand auf die gewünschte Farbe */
+    border: none !important;
+    /* Ändert den Rand auf die gewünschte Farbe */
     border-radius: 30px;
     box-shadow: 5px 5px 10px #620083,
-               -5px -5px 10px #620083;
-    background-color: transparent; /* Hintergrund der Karte transparent, sodass die Border sichtbar bleibt */
+        -5px -5px 10px #620083;
+    background-color: transparent;
+    /* Hintergrund der Karte transparent, sodass die Border sichtbar bleibt */
 }
 
 .card-body {
-    background-color: #2E003E; /* Dunkles Lila für den Inhalt der Karte */
+    background-color: #2E003E;
+    /* Dunkles Lila für den Inhalt der Karte */
 }
 
 .card-title {
@@ -99,37 +135,59 @@
 
 
 
-
-
-
-
 @media (max-width: 992px) {
-    .gradient-left, .gradient-right {
-        display: none; /* Farbverläufe auf mobilen Geräten ausblenden */
+
+    .gradient-left,
+    .gradient-right {
+        display: none;
+        /* Farbverläufe auf mobilen Geräten ausblenden */
     }
 
     .dynamic-center {
-        width: 100%; /* Stellt sicher, dass die Box die gesamte Breite ausfüllt */
-        padding: 20px; /* Weniger Padding für mobile Ansicht */
-        box-shadow: none; /* Entfernen des Schattens auf mobilen Geräten */
+        width: 100%;
+        /* Stellt sicher, dass die Box die gesamte Breite ausfüllt */
+        padding: 20px;
+        /* Weniger Padding für mobile Ansicht */
+        box-shadow: none;
+        /* Entfernen des Schattens auf mobilen Geräten */
     }
 
     .card {
-        margin-bottom: 20px; /* Mehr Abstand zwischen den Cards */
+        margin-bottom: 20px;
+        /* Mehr Abstand zwischen den Cards */
+    }
+
+    a:link,
+    a:visited {
+        text-decoration: none;
     }
 }
 
 /* Weitere Anpassung für mittlere Bildschirmgrößen */
 @media (min-width: 768px) and (max-width: 900px) {
     .dynamic-center {
-        width: 100%; /* Stellt sicher, dass es immer die volle Breite ausfüllt */
+        width: 100%;
+        /* Stellt sicher, dass es immer die volle Breite ausfüllt */
+    }
+
+    a:link,
+    a:visited {
+        text-decoration: none;
     }
 }
 
+
 /* Für größere Bildschirme */
 @media (min-width: 992px) {
-    .gradient-left, .gradient-right {
+
+    .gradient-left,
+    .gradient-right {
         display: block;
         height: auto;
+    }
+
+    a:link,
+    a:visited {
+        text-decoration: none;
     }
 }

@@ -9,6 +9,7 @@ require 'connection.php'; // Datenbankverbindung einbinden
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KremsGuesser</title>
     <link rel="stylesheet" href="stylemain.css">
+    <link rel="stylesheet" href="style.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
         body {
@@ -28,6 +29,7 @@ require 'connection.php'; // Datenbankverbindung einbinden
         .LoginRegisterCard ul {
             padding-left: 20px;
         }
+
     </style>
 </head>
 <body>
@@ -59,7 +61,7 @@ require 'connection.php'; // Datenbankverbindung einbinden
                         </form>
                     <?php else: ?>
                         <!-- Nicht eingeloggt: Login-Button anzeigen -->
-                        <a href="login.php">
+                        <a href="login.php" style="text-decoration: none;">
                             <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
                                 Login
                                 <img src="img/benutzerbild.png" alt="User Image" width="20" height="20" class="ms-2">
