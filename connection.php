@@ -1,5 +1,5 @@
 <?php
-$servername = "193.154.207.221";
+$servername = "193.154.202.54"; // Muss regelmäßig geupdatet werden
 $username = "kremsguesser";
 $password = "123mysql"; // Ersetze xxx mit deinem Passwort
 $dbname = "kremsguesserdb";
