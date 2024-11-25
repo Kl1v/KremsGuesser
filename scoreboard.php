@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Krems Guesser - Scoreboard</title>
+    <link rel="stylesheet" href="stylemain.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
         body {
             margin: 0;
@@ -102,15 +104,33 @@
     </style>
 </head>
 <body>
-    <header>
-        <h1>KREMS GUESSER</h1>
-        <nav>
-            <a href="#">Play</a>
-            <a href="#">Home</a>
-            <a href="#">Scoreboard</a>
-            <a href="#">Log In</a>
-        </nav>
-    </header>
+<nav class="navbar navbar-expand-lg fixed-top" style="background-color: #1e0028;">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#" style="color: #FFD700; font-weight: bold; font-size: 1.5rem;">KREMSGUESSER</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item ms-1 mt-2">
+                    <a class="nav-link text-white" aria-current="page" href="play.php"><h5>Play</h5></a>
+                </li>
+                <li class="nav-item ms-1 mt-2">
+                    <a class="nav-link text-white" href="home.php"><h5>Home</h5></a>
+                </li>
+                <li class="nav-item ms-1 mt-2">
+                    <a class="nav-link text-white" href="scoreboard.php"><h5>Scoreboard</h5></a>
+                </li>
+                <li class="nav-item ms-3">
+                    <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
+                        Login
+                        <img src="img/benutzerbild.png" alt="User Image" width="20" height="20" class="ms-2">
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
 
     <!-- SVG-Welle -->
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 150" style="display: block;">
@@ -182,13 +202,13 @@
                 </tbody>
             </table>
             <div class="start-button">
-                <a href="#">START</a>
+                <a href="play.php">START</a>
             </div>
         </section>
     </main>
 
     <footer>
-        © 2024 Krems Guess
+        © 2024 KREMSGUESSER
     </footer>
 </body>
 </html>

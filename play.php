@@ -17,13 +17,13 @@
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto align-items-center">
                 <li class="nav-item ms-1 mt-2">
-                    <a class="nav-link text-white" aria-current="page" href="#"><h5>Play</h5></a>
+                    <a class="nav-link text-white" aria-current="page" href="play.php"><h5>Play</h5></a>
                 </li>
                 <li class="nav-item ms-1 mt-2">
-                    <a class="nav-link text-white" href="#"><h5>Home</h5></a>
+                    <a class="nav-link text-white" href="index.php"><h5>Home</h5></a>
                 </li>
                 <li class="nav-item ms-1 mt-2">
-                    <a class="nav-link text-white" href="#"><h5>Scoreboard</h5></a>
+                    <a class="nav-link text-white" href="scoreboard.php"><h5>Scoreboard</h5></a>
                 </li>
                 <li class="nav-item ms-3">
                     <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
