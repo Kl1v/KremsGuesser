@@ -94,10 +94,9 @@
 }
 
 
-
-
-
-
+a:link, a:visited {
+    text-decoration: none;
+   }
 
 
 
@@ -117,6 +116,9 @@
     .card {
         margin-bottom: 20px; /* Mehr Abstand zwischen den Cards */
     }
+    a:link, a:visited {
+        text-decoration: none;
+       }
 }
 
 /* Weitere Anpassung für mittlere Bildschirmgrößen */
@@ -132,4 +134,7 @@
         display: block;
         height: auto;
     }
+    a:link, a:visited {
+        text-decoration: none;
+       }
 }

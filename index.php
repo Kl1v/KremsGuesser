@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KremsGuesser</title>
     <link rel="stylesheet" href="stylemain.css">
+    <link rel="stylesheet" href="style.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 </head>
 <body style="padding-top: 70px;">
@@ -27,10 +28,12 @@
                         <a class="nav-link text-white" href="scoreboard.php"><h5>Scoreboard</h5></a>
                     </li>
                     <li class="nav-item ms-3">
+                        <a href="login.php">
                         <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
                             Login
                             <img src="img/benutzerbild.png" alt="User Image" width="20" height="20" class="ms-2">
                         </button>
+                        </a>
                     </li>
                 </ul>
             </div>
@@ -82,8 +85,8 @@
                         <h5 class="card-title">Wie KremsGuesser funktioniert</h5>
                         <ul class="card-text">
                             <li>Du spawnst an einem zufälligen Ort in Krems</li>
-                            <li>Du musst den Standort anhand der Umgebung und Hinweise erkennen.</li>
-                            <li>Die Herausforderung ist, die genaue Position auf einer Karte zu finden.</li>
+                            <li>Du musst den Standort anhand der Umgebung erkennen.</li>
+                            <li>Die Herausforderung ist, die genaue Position auf der Karte zu finden.</li>
                             <li>Je genauer du bist, desto mehr Punkte erhältst du.</li>
                         </ul>
                     </div>

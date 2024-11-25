@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KremsGuesser - Registrieren</title>
     <link rel="stylesheet" href="stylemain.css">
+    <link rel="stylesheet" href="style.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         .password-container {
@@ -86,7 +87,7 @@
                     <a class="nav-link text-white" href="scoreboard.php"><h5>Scoreboard</h5></a>
                 </li>
                 <li class="nav-item ms-3">
-                    <a class="link-button" href="login-register.php">
+                    <a class="link-button" href="login.php">
                         <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
                             Login
                             <img src="img/benutzerbild.png" alt="User Image" width="20" height="20" class="ms-2">

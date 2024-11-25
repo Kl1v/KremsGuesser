@@ -30,10 +30,12 @@
                     <a class="nav-link text-white" href="scoreboard.php"><h5>Scoreboard</h5></a>
                 </li>
                 <li class="nav-item ms-3">
-                    <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
-                        Login
-                        <img src="img/benutzerbild.png" alt="User Image" width="20" height="20" class="ms-2">
-                    </button>
+                        <a href="login.php">
+                        <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
+                            Login
+                            <img src="img/benutzerbild.png" alt="User Image" width="20" height="20" class="ms-2">
+                        </button>
+                        </a>
                 </li>
             </ul>
         </div>
