@@ -8,6 +8,7 @@ session_start();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Krems Guesser - Scoreboard</title>
     <link rel="stylesheet" href="stylemain.css">
+    <link rel="stylesheet" href="style.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
         body {
@@ -125,6 +126,7 @@ session_start();
                     <a class="nav-link text-white" href="scoreboard.php"><h5>Scoreboard</h5></a>
                 </li>
                 <li class="nav-item ms-3">
+<<<<<<< HEAD
                         <?php if (isset($_SESSION['user_name'])): ?>
                             <!-- Eingeloggt: Benutzername anzeigen -->
                             <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
@@ -140,6 +142,15 @@ session_start();
                             </a>
                         <?php endif; ?>
                     </li>
+=======
+                        <a href="login.php">
+                        <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
+                            Login
+                            <img src="img/benutzerbild.png" alt="User Image" width="20" height="20" class="ms-2">
+                        </button>
+                        </a>
+                </li>
+>>>>>>> 65f6cdf9d0ffe30601bea1f4c0f2cac9659579e3
             </ul>
         </div>
     </div>

@@ -9,6 +9,7 @@ require 'connection.php'; // Datenbankverbindung einbinden
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KremsGuesser</title>
     <link rel="stylesheet" href="stylemain.css">
+    <link rel="stylesheet" href="style.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
         body {
@@ -33,6 +34,7 @@ require 'connection.php'; // Datenbankverbindung einbinden
 <body>
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg fixed-top" style="background-color: #1e0028;">
+<<<<<<< HEAD
     <div class="container-fluid">
         <a class="navbar-brand" href="#" style="color: #FFD700; font-weight: bold; font-size: 1.5rem;">KREMSGUESSER</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -68,6 +70,34 @@ require 'connection.php'; // Datenbankverbindung einbinden
                     <?php endif; ?>
                 </li>
             </ul>
+=======
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#" style="color: #FFD700; font-weight: bold; font-size: 1.5rem;">KREMSGUESSER</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item ms-1 mt-2">
+                        <a class="nav-link text-white" aria-current="page" href="play.php"><h5>Play</h5></a>
+                    </li>
+                    <li class="nav-item ms-1 mt-2">
+                        <a class="nav-link text-white" href="index.php"><h5>Home</h5></a>
+                    </li>
+                    <li class="nav-item ms-1 mt-2">
+                        <a class="nav-link text-white" href="scoreboard.php"><h5>Scoreboard</h5></a>
+                    </li>
+                    <li class="nav-item ms-3">
+                        <a href="login.php">
+                        <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
+                            Login
+                            <img src="img/benutzerbild.png" alt="User Image" width="20" height="20" class="ms-2">
+                        </button>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+>>>>>>> 65f6cdf9d0ffe30601bea1f4c0f2cac9659579e3
         </div>
     </div>
 </nav>
@@ -114,9 +144,15 @@ require 'connection.php'; // Datenbankverbindung einbinden
                     <div class="card-body">
                         <h5 class="card-title">Wie KremsGuesser funktioniert</h5>
                         <ul class="card-text">
+<<<<<<< HEAD
                             <li>Du spawnst an einem zufälligen Ort in Krems.</li>
                             <li>Du musst den Standort anhand der Umgebung und Hinweise erkennen.</li>
                             <li>Die Herausforderung ist, die genaue Position auf einer Karte zu finden.</li>
+=======
+                            <li>Du spawnst an einem zufälligen Ort in Krems</li>
+                            <li>Du musst den Standort anhand der Umgebung erkennen.</li>
+                            <li>Die Herausforderung ist, die genaue Position auf der Karte zu finden.</li>
+>>>>>>> 65f6cdf9d0ffe30601bea1f4c0f2cac9659579e3
                             <li>Je genauer du bist, desto mehr Punkte erhältst du.</li>
                         </ul>
                     </div>
