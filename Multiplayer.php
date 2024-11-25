@@ -20,7 +20,7 @@
                     <a class="nav-link text-white" aria-current="page" href="play.php"><h5>Play</h5></a>
                 </li>
                 <li class="nav-item ms-1 mt-2">
-                    <a class="nav-link text-white" href="home.php"><h5>Home</h5></a>
+                    <a class="nav-link text-white" href="index.php"><h5>Home</h5></a>
                 </li>
                 <li class="nav-item ms-1 mt-2">
                     <a class="nav-link text-white" href="scoreboard.php"><h5>Scoreboard</h5></a>
