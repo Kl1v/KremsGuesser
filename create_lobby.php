@@ -1,139 +1,129 @@
+<?php
+require 'connection.php'; // Verbindung zur Datenbank
+require 'functions.php'; // Gemeinsame Funktionen
+session_start(); // Session starten
+
+// Überprüfen, ob der Benutzername in der Session gesetzt ist
+if (!isset($_SESSION['user_name']) || empty($_SESSION['user_name'])) {
+    die('Benutzername ist nicht gesetzt. Bitte melde dich an.');
+}
+
+// Funktion zum Erstellen der Lobby
+function createLobby($conn, $lobbyCode, $rounds, $timeLimit) {
+    // Versucht, die Lobby zu aktualisieren oder zu erstellen
+    $stmt = $conn->prepare("UPDATE lobbies SET rounds = ?, time_limit = ? WHERE code = ?");
+    $stmt->bind_param("iis", $rounds, $timeLimit, $lobbyCode);
+    if ($stmt->execute()) {
+        // Wenn erfolgreich, den Host hinzufügen
+        $stmt = $conn->prepare("INSERT INTO players (username, lobby_code, is_host) VALUES (?, ?, 1)");
+        $stmt->bind_param("ss", $_SESSION['username'], $lobbyCode);
+        if ($stmt->execute()) {
+            $stmt->close();
+            return true;
+        }
+    }
+    $stmt->close();
+    return false;
+}
+
+// POST-Request verarbeiten
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $lobbyCode = $_POST['lobbyCode'] ?? null;
+    $rounds = isset($_POST['rounds']) ? intval($_POST['rounds']) : null;
+    $timeLimit = isset($_POST['timeLimit']) ? intval($_POST['timeLimit']) : null;
+
+    // Validierung der Eingaben
+    if (!$lobbyCode || !$rounds || !$timeLimit) {
+        $errorMessage = 'Alle Felder müssen ausgefüllt sein!';
+    } else {
+        $result = createLobby($conn, $lobbyCode, $rounds, $timeLimit);
+        if ($result) {
+            // Weiterleitung zur Lobby-Startseite oder Erfolgsnachricht
+            header("Location: start_lobby.php?code=" . $lobbyCode);
+            exit;
+        } else {
+            $errorMessage = 'Fehler beim Erstellen der Lobby.';
+        }
+    }
+}
+
+// Generiere einen eindeutigen Code für die Lobby
+$lobbyCode = generateUniqueLobbyCode($conn);
+?>
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KremsGuesser</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="stylemain.css">
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body style="padding-top: 70px;">
-<nav class="navbar navbar-expand-lg fixed-top" style="background-color: #1e0028;">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="#" style="color: #FFD700; font-weight: bold; font-size: 1.5rem;">KREMSGUESSER</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto align-items-center">
-                <li class="nav-item ms-1 mt-2">
-                    <a class="nav-link text-white" aria-current="page" href="play.php"><h5>Play</h5></a>
-                </li>
-                <li class="nav-item ms-1 mt-2">
-                    <a class="nav-link text-white" href="index.php"><h5>Home</h5></a>
-                </li>
-                <li class="nav-item ms-1 mt-2">
-                    <a class="nav-link text-white" href="scoreboard.php"><h5>Scoreboard</h5></a>
-                </li>
-                <li class="nav-item ms-3">
-                        <a href="login.php">
-                        <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
-                            Login
-                            <img src="img/benutzerbild.png" alt="User Image" width="20" height="20" class="ms-2">
-                        </button>
-                        </a>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
 
-<!-- Content Section -->
-<div class="container">
-    <div class="play-container">
-        <h1>Lobby Erstellen</h1>
-        <h4>Stelle hier alle EInstellungen ein für deine Lobby!</h4>
-        <div class="d-flex flex-column align-items-center gap-3">
-            <div class="code-container mb-4">
-                <h1 class="mb-3">Code</h1>
-                <div class="lobby-code-container">
-                <input type="text" placeholder="XXXX" class="lobby-code-input" maxlength="4" oninput="validateLobbyCode(this)">
-                </div>
+<body style="padding-top: 70px;">
+    <!-- Navbar -->
+    <?php require 'navbar.php'; ?>
+
+    <!-- Content Section -->
+    <div class="container">
+        <div class="play-container">
+            <h1>Lobby Erstellen</h1>
+            <h4>Stelle hier alle Einstellungen ein für deine Lobby!</h4>
+
+            <!-- Fehleranzeige -->
+            <?php if (isset($errorMessage)) : ?>
+            <div class="alert alert-danger" role="alert">
+                <?php echo $errorMessage; ?>
             </div>
-            <div class="code-container mb-4">
-            <h1>RUNDEN:</h1>
-                    <div class="option-container">
-                    <div class="option" onclick="selectRound(this)">
-                            <button class="rounds-button">3</button>
-                        </div>
-                        <div class="option" onclick="selectRound(this)">
-                            <button class="rounds-button">5</button>
-                        </div>
-                        <div class="option" onclick="selectRound(this)">
-                            <button class="rounds-button">10</button>
+            <?php endif; ?>
+
+            <!-- Lobby Erstellungsformular -->
+            <form method="POST">
+                <div class="d-flex flex-column align-items-center gap-3">
+                    <div class="code-container mb-4">
+                        <h1 class="mb-3">Code</h1>
+                        <div class="lobby-code-container">
+                            <input type="text" placeholder="XXXX" class="lobby-code-input" maxlength="4"
+                                value="<?php echo $lobbyCode; ?>" readonly name="lobbyCode">
                         </div>
                     </div>
-            </div>
 
-            <div class="code-container mb-4">
-                <h1>ZEITLIMIT PRO RUNDE</h1>
-                <div class="time-input-container">
-                    <input type="number" id="timeInput" placeholder="max.120" oninput="validateSeconds(this)" min="0" max="120" >
+                    <div class="code-container mb-4">
+                        <h1>RUNDEN:</h1>
+                        <div class="option-container">
+                            <div class="option">
+                                <input type="radio" id="round3" name="rounds" value="3" checked>
+                                <label for="round3">3</label>
+                            </div>
+                            <div class="option">
+                                <input type="radio" id="round5" name="rounds" value="5">
+                                <label for="round5">5</label>
+                            </div>
+                            <div class="option">
+                                <input type="radio" id="round10" name="rounds" value="10">
+                                <label for="round10">10</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="code-container mb-4">
+                        <h1>ZEITLIMIT PRO RUNDE</h1>
+                        <div class="time-input-container">
+                            <input type="number" id="timeInput" placeholder="max.120" oninput="validateSeconds(this)"
+                                min="0" max="120" name="timeLimit">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="start-button">START</button>
                 </div>
-            </div>
-
-
-
-                <button class="start-button"> START </button>
-
+            </form>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-        function validateLobbyCode(input) {
-            // Entferne alle Nicht-Zahlen aus der Eingabe
-            input.value = input.value.replace(/[^0-9]/g, '');
-
-            // Stelle sicher, dass der Wert nicht länger als 4 Zeichen ist
-            if (input.value.length > 4) {
-                input.value = input.value.slice(0, 4);
-            }
-        }
-
-
-        // Funktion zum Aktivieren der ausgewählten Rundenzahl
-        function selectRound(element) {
-            const options = document.querySelectorAll('.option');
-            options.forEach(option => option.classList.remove('active'));
-            element.classList.add('active');
-        }
-
-        // Funktion zur Zeitformatierung (z. B. 00:00)
-        function formatTime(input) {
-            let value = input.value.replace(/[^0-9]/g, ''); // Entferne alle Nicht-Zahlen
-            if (value.length > 2) {
-                input.value = value.slice(0, 2) + ":" + value.slice(2, 4);
-            } else {
-                input.value = value;
-            }
-        }
-
-
-        function selectRound(selectedOption) {
-            // Entferne die 'active'-Klasse von allen Optionen
-            const allOptions = document.querySelectorAll('.option');
-            allOptions.forEach(option => option.classList.remove('active'));
-
-            // Füge die 'active'-Klasse nur zur ausgewählten Option hinzu
-            selectedOption.classList.add('active');
-        }
-
-        function validateSeconds(input) {
-            let value = parseInt(input.value, 10); // Konvertiere die Eingabe in eine Zahl
-
-            // Stelle sicher, dass der Wert zwischen 0 und 120 liegt
-            if (isNaN(value) || value < 0) {
-                input.value = ''; // Leere Eingabe, falls ungültig
-            } else if (value > 120) {
-                input.value = 120; // Begrenze auf 120 Sekunden
-            }
-        }
-
-
-    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
