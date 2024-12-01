@@ -1,5 +1,6 @@
 <?php
 session_start();
+require 'connection.php'; // Verbindung zur Datenbank
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -15,11 +16,9 @@ session_start();
     body {
         margin: 0;
         background: linear-gradient(to bottom, #3D0059, #ffffff);
-        /* Verlauf: von der Farbe der Welle zu Weiß */
         color: #fff;
     }
 
-    /* Navbar */
     nav.navbar {
         position: fixed;
         top: 0;
@@ -27,13 +26,10 @@ session_start();
         z-index: 1000;
     }
 
-    /* Welle */
     .wave-container {
         position: relative;
         height: 50vh;
-        /* Mehr Platz für die Welle */
         background: #3D0059;
-        /* Gleiche Farbe wie die Welle */
     }
 
     .wave {
@@ -43,10 +39,8 @@ session_start();
         height: 100%;
     }
 
-    /* Inhalt */
     main {
         margin-top: 11px;
-        /* Abstand zwischen Welle und Scoreboard */
     }
 
     .scoreboard {
@@ -59,6 +53,7 @@ session_start();
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
         overflow: hidden;
         text-align: center;
+        padding-bottom: 20px;
     }
 
     .scoreboard h2 {
@@ -68,6 +63,20 @@ session_start();
         padding: 15px 0;
         font-size: 1.8em;
         font-weight: bold;
+    }
+
+    .user-score {
+        background: #F0E4FF;
+        color: #333;
+        padding: 10px;
+        font-weight: bold;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .scrollable-table {
+        max-height: 300px;
+        overflow-y: auto;
+        margin-top: 20px;
     }
 
     .scores-table {
@@ -92,7 +101,7 @@ session_start();
     }
 
     .start-button {
-        margin: 20px 0;
+        margin: 30px 0;
         text-align: center;
     }
 
@@ -120,48 +129,32 @@ session_start();
 
     .boardstyle {
         position: relative;
-        /* Erlaubt das Überschreiben von Elementen */
         text-align: center;
-        /* Zentriert die Überschrift */
     }
 
     .overlay-title {
         position: absolute;
-        /* Positioniert die Überschrift über die SVG */
         top: 40%;
-        /* Verschiebt die Überschrift nach unten (50% des Containers) */
         left: 50%;
-        /* Zentriert die Überschrift horizontal */
         transform: translate(-50%, -50%);
-        /* Exakte Zentrierung */
         color: white;
-        /* Farbe des Textes */
         font-size: 3rem;
-        /* Schriftgröße */
         font-weight: bold;
-        /* Fettgedruckter Text */
         z-index: 1;
-        /* Stellt sicher, dass die Überschrift vor der SVG liegt */
         pointer-events: none;
-        /* Verhindert, dass die Überschrift Interaktionen blockiert */
     }
 
     svg {
         display: block;
         width: 100%;
-        /* Passt sich an die Breite des Containers an */
         height: auto;
-        /* Bewahrt das Seitenverhältnis */
     }
-
-
 
     .wave-container {
         position: relative;
         width: 100%;
         overflow: hidden;
         background: #3D0059;
-        /* Optional: Farbe hinter dem Bild */
     }
     </style>
 </head>
@@ -169,8 +162,6 @@ session_start();
 <body>
     <!-- Navbar -->
     <?php require 'navbar.php'; ?>
-
-
 
     <div class="boardstyle">
         <h2 class="overlay-title">SCOREBOARD</h2>
@@ -181,11 +172,32 @@ session_start();
         </svg>
     </div>
 
-
-
     <!-- Hauptinhalt -->
-    <main>
+    <main style="margin-bottom: 50px;">
         <section class="scoreboard">
+            <?php
+            if (isset($_SESSION['user_id'])) {
+                // Benutzer ist angemeldet, hole seinen Score
+                $user_id = $_SESSION['user_id'];
+                $user_query = $conn->prepare("SELECT username, score FROM login WHERE id = ?");
+                $user_query->bind_param("i", $user_id);
+                $user_query->execute();
+                $user_result = $user_query->get_result();
+
+                if ($user_result->num_rows > 0) {
+                    $user_row = $user_result->fetch_assoc();
+                    // Berechne den Rang des Benutzers
+                    $rank_query = $conn->prepare("SELECT COUNT(*) + 1 AS rank FROM login WHERE score > ?");
+                    $rank_query->bind_param("i", $user_row['score']);
+                    $rank_query->execute();
+                    $rank_result = $rank_query->get_result();
+                    $rank = $rank_result->fetch_assoc()['rank'];
+
+                    echo "<div class='user-score'>Your Rank: $rank | Your Score: " . htmlspecialchars($user_row['score']) . " | Name: " . htmlspecialchars($user_row['username']) . "</div>";
+                }
+            }
+            ?>
+
             <table class="scores-table">
                 <thead>
                     <tr>
@@ -195,58 +207,28 @@ session_start();
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>XXXXXX</td>
-                        <td>Max Muster</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>XXXXXX</td>
-                        <td>Maxi M.</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>XXXXXX</td>
-                        <td>Maxl Mus.</td>
-                    </tr>
-                    <tr>
-                        <td>4</td>
-                        <td>XXXXXX</td>
-                        <td>Muster Max</td>
-                    </tr>
-                    <tr>
-                        <td>5</td>
-                        <td>XXXXXX</td>
-                        <td>Maxer Muster</td>
-                    </tr>
-                    <tr>
-                        <td>6</td>
-                        <td>XXXXXX</td>
-                        <td>Max Muster</td>
-                    </tr>
-                    <tr>
-                        <td>7</td>
-                        <td>XXXXXX</td>
-                        <td>Maxi M.</td>
-                    </tr>
-                    <tr>
-                        <td>8</td>
-                        <td>XXXXXX</td>
-                        <td>Maxl Mus.</td>
-                    </tr>
-                    <tr>
-                        <td>9</td>
-                        <td>XXXXXX</td>
-                        <td>Muster Max</td>
-                    </tr>
-                    <tr>
-                        <td>10</td>
-                        <td>XXXXXX</td>
-                        <td>Maxer Muster</td>
-                    </tr>
+                    <?php
+                    $sql_top10 = "SELECT username, score FROM login ORDER BY score DESC LIMIT 10";
+                    $result_top10 = $conn->query($sql_top10);
+
+                    if ($result_top10->num_rows > 0) {
+                        $rank = 1;
+                        while ($row = $result_top10->fetch_assoc()) {
+                            echo "<tr>
+                                    <td>" . $rank . "</td>
+                                    <td>" . htmlspecialchars($row['score']) . "</td>
+                                    <td>" . htmlspecialchars($row['username']) . "</td>
+                                  </tr>";
+                            $rank++;
+                        }
+                    } else {
+                        echo "<tr><td colspan='3'>Keine Spieler gefunden</td></tr>";
+                    }
+                    ?>
                 </tbody>
             </table>
+
+
             <div class="start-button">
                 <a href="play.php">START</a>
             </div>
