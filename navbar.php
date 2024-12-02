@@ -44,6 +44,12 @@ if (session_status() === PHP_SESSION_NONE) {
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                             <li>
+                                <form action="profile.php" method="POST" style="margin: 0;">
+                                    <button type="submit" class="dropdown-item">Einstellungen</button>
+                                </form>
+                            </li>
+
+                            <li>
                                 <form action="logout.php" method="POST" style="margin: 0;">
                                     <button type="submit" class="dropdown-item">Logout</button>
                                 </form>
