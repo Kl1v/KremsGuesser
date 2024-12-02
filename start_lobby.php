@@ -97,10 +97,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['closeLobby'])) {
 
 // Spieler-Funktion zum Verlassen der Lobby
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['leaveLobby'])) {
+    // Entferne den aktuellen Spieler aus der Lobby
     removePlayer($conn, $_SESSION['user_id']);
     header("Location: index.php?message=Du hast die Lobby verlassen.");
     exit;
 }
+
+// Wenn der Spieler die Seite verlässt, sicherstellen, dass er aus der Lobby entfernt wird
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['leaveLobby'])) {
+    removePlayer($conn, $_SESSION['user_id']);
+    header("Location: index.php?message=Du hast die Lobby verlassen.");
+    exit;
+}
+
 ?>
 
 <!DOCTYPE html>
