@@ -185,15 +185,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['leaveLobby'])) {
                         <!-- Nur der Host kann die Lobby schließen -->
                         <?php if ($_SESSION['user_name'] === $host['username']): ?>
                             <form method="POST" onsubmit="return confirm('Möchtest du die Lobby wirklich schließen?');">
-                                <button type="submit" name="closeLobby" class="btn btn-close-lobby w-100 mb-2">
+                                <button type="submit" name="closeLobby" class="btn btn-close-lobby w-40 mb-2">
                                     Lobby schließen
                                 </button>
                             </form>
-                            <button class="btn btn-success w-100" onclick="startGame()">Spiel starten</button>
+                            <button class="btn btn-success w-40 mb-2" onclick="startGame()">Spiel starten</button>
                         <?php endif; ?>
 
                         <form method="POST" onsubmit="return confirm('Möchtest du die Lobby wirklich verlassen?');">
-                            <button type="submit" name="leaveLobby" class="btn btn-warning w-100 mb-2" id="leaveLobbyButton">
+                            <button type="submit" name="leaveLobby" class="btn btn-warning w-40 mb-2" id="leaveLobbyButton">
                                 Lobby verlassen
                             </button>
                         </form>
