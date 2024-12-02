@@ -50,13 +50,30 @@ function deleteLobby($conn, $lobbyCode) {
     }
 }
 
+// Funktion, um einen Spieler zu entfernen
+function removePlayer($conn, $playerId) {
+    $stmt = $conn->prepare("DELETE FROM players WHERE id = ?");
+    $stmt->bind_param("i", $playerId);
+    $stmt->execute();
+    $stmt->close();
+}
+
 // AJAX-Request: Spieler in der Lobby abrufen
-if (isset($_GET['action']) && $_GET['action'] === 'get_players') {
-    if (isset($_GET['code'])) {
+if (isset($_GET['action'])) {
+    $action = $_GET['action'];
+
+    if ($action === 'get_players' && isset($_GET['code'])) {
         $lobbyCode = $_GET['code'];
         $players = getPlayersInLobby($conn, $lobbyCode);
         echo json_encode($players);
     }
+
+    if ($action === 'kick_player' && isset($_POST['playerId'])) {
+        $playerId = $_POST['playerId'];
+        removePlayer($conn, $playerId);
+        echo json_encode(["status" => "success"]);
+    }
+
     exit;
 }
 
@@ -77,6 +94,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['closeLobby'])) {
     header("Location: index.php?message=Lobby wurde erfolgreich geschlossen.");
     exit;
 }
+
+// Spieler-Funktion zum Verlassen der Lobby
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['leaveLobby'])) {
+    removePlayer($conn, $_SESSION['user_id']);
+    header("Location: index.php?message=Du hast die Lobby verlassen.");
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
@@ -88,9 +112,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['closeLobby'])) {
     <title>Lobby - <?php echo htmlspecialchars($lobbyCode); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body {
-            background-color: #f8f9fa;
-        }
         .card {
             border: none;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -110,6 +131,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['closeLobby'])) {
         .btn-close-lobby:hover {
             background-color: #c82333;
             border-color: #bd2130;
+        }
+        body {
+            background-image: url('img/Big-Map.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        body::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: -1;
+        }
+        .card {
+            color:white;
+            border: none;
+            background-color: #2e003e;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            min-height: 93vh;
         }
     </style>
 </head>
@@ -141,6 +185,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['closeLobby'])) {
                                 </button>
                             </form>
                         <?php endif; ?>
+
+                        <form method="POST" onsubmit="return confirm('Möchtest du die Lobby wirklich verlassen?');">
+                            <button type="submit" name="leaveLobby" class="btn btn-warning w-100 mb-2">
+                                Lobby verlassen
+                            </button>
+                        </form>
                         <button class="btn btn-success w-100" onclick="startGame()">Spiel starten</button>
                     </div>
                 </div>
@@ -172,10 +222,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['closeLobby'])) {
                             listItem.appendChild(badge);
                         }
 
+                        // Wenn der Benutzer der Host ist, kann er den Spieler kicken
+                        if (<?php echo $_SESSION['user_id']; ?> === <?php echo $host['id']; ?>) {
+                            const kickButton = document.createElement("button");
+                            kickButton.className = "btn btn-danger btn-sm";
+                            kickButton.textContent = "Kick";
+                            kickButton.onclick = () => kickPlayer(player.id);
+                            listItem.appendChild(kickButton);
+                        }
+
                         playerList.appendChild(listItem);
                     });
                 })
                 .catch(error => console.error("Fehler beim Laden der Spieler:", error));
+        }
+
+        // Funktion zum Kicken eines Spielers
+        function kickPlayer(playerId) {
+            if (confirm("Möchtest du diesen Spieler wirklich kicken?")) {
+                fetch('start_lobby.php?action=kick_player', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ playerId: playerId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        loadPlayers(); // Spieler-Liste nach dem Kicken aktualisieren
+                    } else {
+                        alert("Fehler beim Kicken des Spielers.");
+                    }
+                })
+                .catch(error => console.error("Fehler beim Kicken des Spielers:", error));
+            }
         }
 
         // Funktion zum Starten des Spiels
