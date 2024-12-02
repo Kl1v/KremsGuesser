@@ -31,14 +31,14 @@ function getHostOfLobby($conn, $lobbyCode) {
 function deleteLobby($conn, $lobbyCode) {
     $conn->begin_transaction(); // Transaktion starten
     try {
-        // Lösche die Lobby
-        $stmt = $conn->prepare("DELETE FROM lobbies WHERE code = ?");
+        // Lösche alle Spieler der Lobby
+        $stmt = $conn->prepare("DELETE FROM players WHERE lobby_code = ?");
         $stmt->bind_param("s", $lobbyCode);
         $stmt->execute();
         $stmt->close();
 
-        // Lösche die Spieler aus der Lobby
-        $stmt = $conn->prepare("DELETE FROM players WHERE lobby_code = ?");
+        // Lösche die Lobby
+        $stmt = $conn->prepare("DELETE FROM lobbies WHERE code = ?");
         $stmt->bind_param("s", $lobbyCode);
         $stmt->execute();
         $stmt->close();
