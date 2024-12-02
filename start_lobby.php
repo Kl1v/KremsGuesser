@@ -51,9 +51,9 @@ function deleteLobby($conn, $lobbyCode) {
 }
 
 // Funktion, um einen Spieler zu entfernen
-function removePlayer($conn, $playerId) {
-    $stmt = $conn->prepare("DELETE FROM players WHERE id = ?");
-    $stmt->bind_param("i", $playerId);
+function removePlayer($conn, $username) {
+    $stmt = $conn->prepare("DELETE FROM players WHERE username = ?");
+    $stmt->bind_param("s", $username);
     $stmt->execute();
     $stmt->close();
 }
@@ -68,9 +68,9 @@ if (isset($_GET['action'])) {
         echo json_encode($players);
     }
 
-    if ($action === 'kick_player' && isset($_POST['playerId'])) {
-        $playerId = $_POST['playerId'];
-        removePlayer($conn, $playerId);
+    if ($action === 'kick_player' && isset($_POST['username'])) {
+        $username = $_POST['username'];
+        removePlayer($conn, $username);
         echo json_encode(["status" => "success"]);
     }
 
@@ -97,16 +97,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['closeLobby'])) {
 
 // Spieler-Funktion zum Verlassen der Lobby
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['leaveLobby'])) {
-    // Entferne den aktuellen Spieler aus der Lobby
-    removePlayer($conn, $_SESSION['user_id']);
-    header("Location: index.php?message=Du hast die Lobby verlassen.");
-    exit;
-}
-
-// Wenn der Spieler die Seite verlässt, sicherstellen, dass er aus der Lobby entfernt wird
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['leaveLobby'])) {
-    removePlayer($conn, $_SESSION['user_id']);
-    header("Location: index.php?message=Du hast die Lobby verlassen.");
+    $stmt = $conn->prepare("DELETE FROM players WHERE username = ?");
+    $stmt->bind_param("s", $_SESSION['user_name']);
+    $stmt->execute();
+    $stmt->close();
+    
+    header("Location: index.php");
     exit;
 }
 
@@ -158,7 +154,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['leaveLobby'])) {
             z-index: -1;
         }
         .card {
-            color:white;
+            color: white;
             border: none;
             background-color: #2e003e;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -193,14 +189,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['leaveLobby'])) {
                                     Lobby schließen
                                 </button>
                             </form>
+                            <button class="btn btn-success w-100" onclick="startGame()">Spiel starten</button>
                         <?php endif; ?>
 
                         <form method="POST" onsubmit="return confirm('Möchtest du die Lobby wirklich verlassen?');">
-                            <button type="submit" name="leaveLobby" class="btn btn-warning w-100 mb-2">
+                            <button type="submit" name="leaveLobby" class="btn btn-warning w-100 mb-2" id="leaveLobbyButton">
                                 Lobby verlassen
                             </button>
                         </form>
-                        <button class="btn btn-success w-100" onclick="startGame()">Spiel starten</button>
                     </div>
                 </div>
             </div>
@@ -211,13 +207,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['leaveLobby'])) {
     <script>
         const lobbyCode = "<?php echo htmlspecialchars($lobbyCode); ?>";
 
-        // Funktion, um Spieler aus der Datenbank abzurufen und die Liste zu aktualisieren
         function loadPlayers() {
             fetch(`start_lobby.php?action=get_players&code=${lobbyCode}`)
                 .then(response => response.json())
                 .then(players => {
                     const playerList = document.getElementById("playerList");
-                    playerList.innerHTML = ""; // Alte Liste leeren
+                    playerList.innerHTML = ""; 
 
                     players.forEach(player => {
                         const listItem = document.createElement("li");
@@ -231,12 +226,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['leaveLobby'])) {
                             listItem.appendChild(badge);
                         }
 
-                        // Wenn der Benutzer der Host ist, kann er den Spieler kicken
-                        if (<?php echo $_SESSION['user_id']; ?> === <?php echo $host['id']; ?>) {
+                        if ("<?php echo $_SESSION['user_name']; ?>" === "<?php echo $host['username']; ?>") {
                             const kickButton = document.createElement("button");
                             kickButton.className = "btn btn-danger btn-sm";
                             kickButton.textContent = "Kick";
-                            kickButton.onclick = () => kickPlayer(player.id);
+                            kickButton.onclick = () => kickPlayer(player.username);
                             listItem.appendChild(kickButton);
                         }
 
@@ -246,20 +240,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['leaveLobby'])) {
                 .catch(error => console.error("Fehler beim Laden der Spieler:", error));
         }
 
-        // Funktion zum Kicken eines Spielers
-        function kickPlayer(playerId) {
+        function kickPlayer(username) {
             if (confirm("Möchtest du diesen Spieler wirklich kicken?")) {
                 fetch('start_lobby.php?action=kick_player', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ playerId: playerId })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: username })
                 })
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === "success") {
-                        loadPlayers(); // Spieler-Liste nach dem Kicken aktualisieren
+                        loadPlayers();
                     } else {
                         alert("Fehler beim Kicken des Spielers.");
                     }
@@ -268,16 +259,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['leaveLobby'])) {
             }
         }
 
-        // Funktion zum Starten des Spiels
         function startGame() {
-            alert("Das Spiel startet bald!");
-            // Hier könnte die Weiterleitung zur Spielseite ergänzt werden.
+            if (confirm("Möchtest du das Spiel starten?")) {
+                alert("Das Spiel startet bald!");
+                // Spielstart-Logik hier implementieren
+            }
         }
 
-        // Spieler-Liste jede Sekunde aktualisieren
         setInterval(loadPlayers, 1000);
-
-        // Initiales Laden der Spieler-Liste
         loadPlayers();
     </script>
 </body>
