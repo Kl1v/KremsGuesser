@@ -69,59 +69,65 @@ $lobbyCode = generateUniqueLobbyCode($conn);
 
     <!-- Content Section -->
     <div class="container">
-        <div class="play-container">
-            <h1>Lobby Erstellen</h1>
-            <h4>Stelle hier alle Einstellungen ein für deine Lobby!</h4>
+    <div class="play-container">
+        <h1 class="text-center">Lobby Erstellen</h1>
+        <h4 class="text-center">Stelle hier alle Einstellungen ein für deine Lobby!</h4>
 
-            <!-- Fehleranzeige -->
-            <?php if (isset($errorMessage)) : ?>
-            <div class="alert alert-danger" role="alert">
-                <?php echo $errorMessage; ?>
-            </div>
-            <?php endif; ?>
-
-            <!-- Lobby Erstellungsformular -->
-            <form method="POST">
-                <div class="d-flex flex-column align-items-center gap-3">
-                    <div class="code-container mb-4">
-                        <h1 class="mb-3">Code</h1>
-                        <div class="lobby-code-container">
-                            <input type="text" placeholder="XXXX" class="lobby-code-input" maxlength="4"
-                                value="<?php echo $lobbyCode; ?>" readonly name="lobbyCode">
-                        </div>
-                    </div>
-
-                    <div class="code-container mb-4">
-                        <h1>RUNDEN:</h1>
-                        <div class="option-container">
-                            <div class="option">
-                                <input type="radio" id="round3" name="rounds" value="3" checked>
-                                <label for="round3">3</label>
-                            </div>
-                            <div class="option">
-                                <input type="radio" id="round5" name="rounds" value="5">
-                                <label for="round5">5</label>
-                            </div>
-                            <div class="option">
-                                <input type="radio" id="round10" name="rounds" value="10">
-                                <label for="round10">10</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="code-container mb-4">
-                        <h1>ZEITLIMIT PRO RUNDE</h1>
-                        <div class="time-input-container">
-                            <input type="number" id="timeInput" placeholder="max.120" oninput="validateSeconds(this)"
-                                min="0" max="120" name="timeLimit">
-                        </div>
-                    </div>
-
-                    <button type="submit" class="start-button">START</button>
-                </div>
-            </form>
+        <!-- Fehleranzeige -->
+        <?php if (isset($errorMessage)) : ?>
+        <div class="alert alert-danger" role="alert">
+            <?php echo $errorMessage; ?>
         </div>
+        <?php endif; ?>
+
+        <!-- Lobby Erstellungsformular -->
+        <form method="POST">
+            <div class="d-flex flex-column align-items-center gap-3">
+
+                <!-- Lobby Code -->
+                <div class="code-container w-100">
+                    <h1 class="mb-3 text-center">Code</h1>
+                    <div class="lobby-code-container text-center">
+                        <input type="text" placeholder="XXXX" class="lobby-code-input" maxlength="4"
+                            value="<?php echo $lobbyCode; ?>" readonly name="lobbyCode">
+                    </div>
+                </div>
+
+                <!-- Runden Auswahl -->
+                <div class="code-container w-100">
+                    <h1 class="text-center">RUNDEN:</h1>
+                    <div class="option-container d-flex justify-content-center">
+                        <div class="option">
+                            <input type="radio" id="round3" name="rounds" value="3" checked>
+                            <label for="round3">3</label>
+                        </div>
+                        <div class="option mx-3">
+                            <input type="radio" id="round5" name="rounds" value="5">
+                            <label for="round5">5</label>
+                        </div>
+                        <div class="option">
+                            <input type="radio" id="round10" name="rounds" value="10">
+                            <label for="round10">10</label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Zeitlimit -->
+                <div class="code-container w-100 ">
+                    <h1 class="text-center">ZEITLIMIT PRO RUNDE</h1>
+                    <div class="time-input-container text-center">
+                    <input type="number" id="timeInput" placeholder="max: 120sec" oninput="validateSeconds(this)"
+                    min="0" max="120" name="timeLimit" style="width:100px;">
+                    </div>
+                </div>
+
+                <!-- Start Button -->
+                <button type="submit" class="start-button btn btn-warning w-50 mt-4">START</button>
+            </div>
+        </form>
     </div>
+</div>
+
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
