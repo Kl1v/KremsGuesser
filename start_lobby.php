@@ -58,6 +58,33 @@ function removePlayer($conn, $username) {
     $stmt->close();
 }
 
+// Funktion zum Starten des Spiels und Weiterleiten aller Spieler
+function startGame($conn, $lobbyCode) {
+    // Holen der ersten Runde-Location
+    $stmt = $conn->prepare("SELECT latitude, longitude FROM locations WHERE lobby_code = ? ORDER BY round ASC LIMIT 1");
+    $stmt->bind_param("s", $lobbyCode);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $location = $result->fetch_assoc();
+    $stmt->close();
+
+    // Speichern des Spielstatus (Spiel ist gestartet)
+    $stmt = $conn->prepare("UPDATE lobbies SET is_game_started = 1 WHERE code = ?");
+    $stmt->bind_param("s", $lobbyCode);
+    $stmt->execute();
+    $stmt->close();
+
+    // Weiterleitung der Spieler zur Spiel-Seite
+    $players = getPlayersInLobby($conn, $lobbyCode);
+    foreach ($players as $player) {
+        // Weiterleitung für alle Spieler
+        header("Location: game_multiplayer.php?code=$lobbyCode&lat={$location['latitude']}&lng={$location['longitude']}");
+        exit;
+    }
+
+    return $location;
+}
+
 // AJAX-Request: Spieler in der Lobby abrufen
 if (isset($_GET['action'])) {
     $action = $_GET['action'];
@@ -104,6 +131,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['leaveLobby'])) {
     
     header("Location: index.php");
     exit;
+}
+
+// Spiel starten, wenn der Host den Button klickt
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['startGame'])) {
+    $location = startGame($conn, $lobbyCode);
+    // Weiterleitung erfolgt nun in der startGame-Funktion für alle Spieler
+    exit;  // Verhindert doppelte Ausführung der Weiterleitung
 }
 
 ?>
@@ -189,7 +223,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['leaveLobby'])) {
                                     Lobby schließen
                                 </button>
                             </form>
-                            <button class="btn btn-success w-40 mb-2" onclick="startGame()">Spiel starten</button>
+                            <form method="POST" onsubmit="return confirm('Möchtest du das Spiel wirklich starten?');">
+                                <button type="submit" name="startGame" class="btn btn-success w-40 mb-2">
+                                    Spiel starten
+                                </button>
+                            </form>
                         <?php endif; ?>
 
                         <form method="POST" onsubmit="return confirm('Möchtest du die Lobby wirklich verlassen?');">
@@ -256,13 +294,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['leaveLobby'])) {
                     }
                 })
                 .catch(error => console.error("Fehler beim Kicken des Spielers:", error));
-            }
-        }
-
-        function startGame() {
-            if (confirm("Möchtest du das Spiel starten?")) {
-                alert("Das Spiel startet bald!");
-                // Spielstart-Logik hier implementieren
             }
         }
 

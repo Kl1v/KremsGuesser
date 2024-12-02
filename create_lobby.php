@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_name']) || empty($_SESSION['user_name'])) {
     die('Benutzername ist nicht gesetzt. Bitte melde dich an.');
 }
 
-// Funktion zum Erstellen der Lobby
+// Funktion zur Erstellung der Lobby
 function createLobby($conn, $lobbyCode, $rounds, $timeLimit) {
     // Überprüfen, ob die Lobby bereits existiert
     $stmt = $conn->prepare("SELECT * FROM lobbies WHERE code = ?");
@@ -30,12 +30,40 @@ function createLobby($conn, $lobbyCode, $rounds, $timeLimit) {
     // Spieler als Host hinzufügen
     $stmt = $conn->prepare("INSERT INTO players (username, lobby_code, is_host) VALUES (?, ?, 1)");
     $stmt->bind_param("ss", $_SESSION['user_name'], $lobbyCode);
-    if ($stmt->execute()) {
+    if (!$stmt->execute()) {
         $stmt->close();
-        return true;
+        return false; // Fehler beim Hinzufügen des Hosts
     }
     $stmt->close();
-    return false; // Fehler beim Hinzufügen des Hosts
+
+    // Zufällige Positionen für jede Runde generieren
+    for ($i = 1; $i <= $rounds; $i++) {
+        $location = getRandomLocationInKrems(); // Zufällige Position generieren
+        $stmt = $conn->prepare("INSERT INTO locations (lobby_code, round, latitude, longitude) VALUES (?, ?, ?, ?)");
+        $stmt->bind_param("sidd", $lobbyCode, $i, $location['lat'], $location['lng']);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            return false; // Fehler beim Hinzufügen der Position
+        }
+    }
+
+    return true;
+}
+
+// Funktion zur Generierung zufälliger Koordinaten in Krems
+function getRandomLocationInKrems() {
+    // Breiten- und Längengradbereich für Krems definieren
+    $latMin = 48.392; // Minimaler Breitengrad
+    $latMax = 48.428; // Maximaler Breitengrad
+    $lngMin = 15.577; // Minimaler Längengrad
+    $lngMax = 15.625; // Maximaler Längengrad
+
+    // Zufälligen Breitengrad und Längengrad berechnen
+    $latitude = rand($latMin * 1000000, $latMax * 1000000) / 1000000;
+    $longitude = rand($lngMin * 1000000, $lngMax * 1000000) / 1000000;
+
+    // Koordinaten zurückgeben
+    return ['lat' => $latitude, 'lng' => $longitude];
 }
 
 // POST-Request verarbeiten
@@ -75,69 +103,35 @@ $lobbyCode = generateUniqueLobbyCode($conn);
 </head>
 
 <body style="padding-top: 70px;">
-    <!-- Navbar -->
     <?php require 'navbar.php'; ?>
 
     <div class="container">
         <div class="play-container">
             <h1 class="text-center">Lobby Erstellen</h1>
-            <h4 class="text-center">Stelle hier alle Einstellungen ein für deine Lobby!</h4>
-
-            <!-- Fehleranzeige -->
             <?php if (isset($errorMessage)) : ?>
-                <div class="alert alert-danger" role="alert">
-                    <?php echo $errorMessage; ?>
-                </div>
+                <div class="alert alert-danger"><?php echo $errorMessage; ?></div>
             <?php endif; ?>
 
-            <!-- Lobby Erstellungsformular -->
             <form method="POST">
                 <div class="d-flex flex-column align-items-center gap-3">
-                    <!-- Lobby Code -->
                     <div class="code-container w-100">
-                        <h1 class="mb-3 text-center">Code</h1>
-                        <div class="lobby-code-container text-center">
-                            <input type="text" placeholder="XXXX" class="lobby-code-input" maxlength="4"
-                                   value="<?php echo $lobbyCode; ?>" readonly name="lobbyCode">
-                        </div>
+                        <h1>Code</h1>
+                        <input type="text" maxlength="4" value="<?php echo $lobbyCode; ?>" readonly name="lobbyCode">
                     </div>
-
-                    <!-- Runden Auswahl -->
                     <div class="code-container w-100">
-                        <h1 class="text-center">RUNDEN:</h1>
-                        <div class="option-container d-flex justify-content-center">
-                            <div class="option">
-                                <input type="radio" id="round3" name="rounds" value="3" checked>
-                                <label for="round3">3</label>
-                            </div>
-                            <div class="option mx-3">
-                                <input type="radio" id="round5" name="rounds" value="5">
-                                <label for="round5">5</label>
-                            </div>
-                            <div class="option">
-                                <input type="radio" id="round10" name="rounds" value="10">
-                                <label for="round10">10</label>
-                            </div>
-                        </div>
+                        <h1>RUNDEN:</h1>
+                        <input type="radio" id="round3" name="rounds" value="3" checked><label for="round3">3</label>
+                        <input type="radio" id="round5" name="rounds" value="5"><label for="round5">5</label>
                     </div>
-
-                    <!-- Zeitlimit -->
                     <div class="code-container w-100">
-                        <h1 class="text-center">ZEITLIMIT PRO RUNDE</h1>
-                        <div class="time-input-container text-center">
-                            <input type="number" id="timeInput" placeholder="max: 120sec" oninput="validateSeconds(this)"
-                                   min="0" max="120" name="timeLimit" style="width:100px;">
-                        </div>
+                        <h1>ZEITLIMIT PRO RUNDE</h1>
+                        <input type="number" min="10" max="120" name="timeLimit">
                     </div>
-
-                    <!-- Start Button -->
-                    <button type="submit" class="start-button btn btn-warning w-50 mt-4">START</button>
+                    <button type="submit" class="btn btn-warning">START</button>
                 </div>
             </form>
         </div>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>
