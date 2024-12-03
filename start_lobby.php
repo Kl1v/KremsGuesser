@@ -101,6 +101,17 @@ if (isset($_GET['action'])) {
         echo json_encode(["status" => "success"]);
     }
 
+    if ($action === 'check_game_started' && isset($_GET['code'])) {
+        $lobbyCode = $_GET['code'];
+        $stmt = $conn->prepare("SELECT is_game_started FROM lobbies WHERE code = ?");
+        $stmt->bind_param("s", $lobbyCode);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $data = $result->fetch_assoc();
+        $stmt->close();
+        echo json_encode($data);
+    }
+
     exit;
 }
 
@@ -230,8 +241,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['startGame'])) {
                             </form>
                         <?php endif; ?>
 
-                        <form method="POST" onsubmit="return confirm('Möchtest du die Lobby wirklich verlassen?');">
-                            <button type="submit" name="leaveLobby" class="btn btn-warning w-40 mb-2" id="leaveLobbyButton">
+                        <form method="POST">
+                            <button type="submit" name="leaveLobby" class="btn btn-warning w-40">
                                 Lobby verlassen
                             </button>
                         </form>
@@ -241,64 +252,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['startGame'])) {
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Spieler laden
         const lobbyCode = "<?php echo htmlspecialchars($lobbyCode); ?>";
 
         function loadPlayers() {
             fetch(`start_lobby.php?action=get_players&code=${lobbyCode}`)
                 .then(response => response.json())
                 .then(players => {
-                    const playerList = document.getElementById("playerList");
-                    playerList.innerHTML = ""; 
+                    const playerList = document.getElementById('playerList');
+                    playerList.innerHTML = ''; // Leeren der Liste
 
                     players.forEach(player => {
-                        const listItem = document.createElement("li");
-                        listItem.className = "list-group-item d-flex justify-content-between align-items-center";
-                        listItem.textContent = player.username;
-
-                        if (player.is_host) {
-                            const badge = document.createElement("span");
-                            badge.className = "badge bg-primary";
-                            badge.textContent = "Host";
-                            listItem.appendChild(badge);
-                        }
-
-                        if ("<?php echo $_SESSION['user_name']; ?>" === "<?php echo $host['username']; ?>") {
-                            const kickButton = document.createElement("button");
-                            kickButton.className = "btn btn-danger btn-sm";
-                            kickButton.textContent = "Kick";
-                            kickButton.onclick = () => kickPlayer(player.username);
-                            listItem.appendChild(kickButton);
-                        }
-
-                        playerList.appendChild(listItem);
+                        const li = document.createElement('li');
+                        li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                        li.innerHTML = `${player.username} ${player.is_host == 1 ? '(Host)' : ''}`;
+                        playerList.appendChild(li);
                     });
-                })
-                .catch(error => console.error("Fehler beim Laden der Spieler:", error));
+                });
         }
 
-        function kickPlayer(username) {
-            if (confirm("Möchtest du diesen Spieler wirklich kicken?")) {
-                fetch('start_lobby.php?action=kick_player', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username: username })
-                })
+        loadPlayers();
+        setInterval(loadPlayers, 000); // Alle 5 Sekunden die Spieler aktualisieren
+
+        // Überprüfen, ob das Spiel gestartet wurde
+        setInterval(() => {
+            fetch(`start_lobby.php?action=check_game_started&code=${lobbyCode}`)
                 .then(response => response.json())
                 .then(data => {
-                    if (data.status === "success") {
-                        loadPlayers();
-                    } else {
-                        alert("Fehler beim Kicken des Spielers.");
+                    if (data.is_game_started === 1) {
+                        // Weiterleitung zur game_multiplayer.php mit dem Lobby-Code
+                        location.href = `game_multiplayer.php?code=${lobbyCode}`;
                     }
-                })
-                .catch(error => console.error("Fehler beim Kicken des Spielers:", error));
-            }
-        }
-
-        setInterval(loadPlayers, 1000);
-        loadPlayers();
+                });
+        }, 2000); // Alle 2 Sekunden prüfen
     </script>
 </body>
 
