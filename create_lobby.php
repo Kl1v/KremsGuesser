@@ -142,6 +142,7 @@ $lobbyCode = generateUniqueLobbyCode($conn);
                         <h1>RUNDEN:</h1>
                         <input type="radio" id="round3" name="rounds" value="3" checked><label for="round3">3</label>
                         <input type="radio" id="round5" name="rounds" value="5"><label for="round5">5</label>
+                        <input type="radio" id="round10" name="rounds" value="10"><label for="round10">10</label>
                     </div>
                     <div class="code-container w-100">
                         <h1>ZEITLIMIT PRO RUNDE</h1>

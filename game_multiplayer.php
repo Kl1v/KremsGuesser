@@ -9,6 +9,39 @@ if (isset($_GET['code'])) {
     die("Kein Lobby-Code übergeben.");
 }
 
+// Verarbeitung von POST-Daten für gespeicherte Guesses
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $data = json_decode(file_get_contents('php://input'), true);
+
+    if (
+        isset($data['lobbyCode'], $data['runde'], $data['spielername'], $data['lat'], $data['lng'], $data['score']) &&
+        $data['lobbyCode'] === $lobbyCode
+    ) {
+        $stmt = $conn->prepare(
+            "INSERT INTO guesses (lobby_id, runde, spielername, lat, lng, score) 
+             VALUES (?, ?, ?, ?, ?, ?)"
+        );
+        $stmt->bind_param(
+            "sisddi",
+            $data['lobbyCode'],
+            $data['runde'],
+            $data['spielername'],
+            $data['lat'],
+            $data['lng'],
+            $data['score']
+        );
+
+        if ($stmt->execute()) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'error' => $stmt->error]);
+        }
+
+        $stmt->close();
+        exit;
+    }
+}
+
 // Alle Locations für die angegebene Lobby in Reihenfolge der Runden abrufen
 $stmt = $conn->prepare("SELECT latitude, longitude, round FROM locations WHERE lobby_code = ? ORDER BY round ASC");
 $stmt->bind_param("s", $lobbyCode);
@@ -33,9 +66,8 @@ $stmt->close();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multiplayer-Spiel</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap&libraries=maps,marker&v=beta" async defer></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCEtD-b25DbDtWDqwJGcVFpJhzKiYU9rjk&callback=initMap&libraries=maps,marker&v=beta" async defer></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCEtD-b25DbDtWDqwJGcVFpJhzKiYU9rjk&callback=initMap&libraries=maps,marker&v=beta"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="stylemain.css">
     <style>
@@ -69,16 +101,16 @@ $stmt->close();
     <button id="submit-btn" class="btn btn-primary">Absenden</button>
 
     <script>
-        let smallMap; // Kleine Karte
-        let smallMapMarker; // Marker in der kleinen Karte
-        let markerPosition; // Variable zum Speichern der Koordinaten des Markers
-        let currentLocationIndex = 0; // Startindex der Locations
-        let locations = <?php echo json_encode($locations); ?>; // Locations aus PHP
+        let smallMap;
+        let smallMapMarker;
+        let markerPosition;
+        let currentLocationIndex = 0;
+        let locations = <?php echo json_encode($locations); ?>;
+        const lobbyCode = "<?php echo $lobbyCode; ?>";
+        const playerName = "<?php echo $_SESSION['user_name'] ?? 'Unbekannt'; ?>";
 
-        // Berechnung der Entfernung zwischen zwei geographischen Punkten (Haversine-Formel)
         function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Erdradius in Kilometern
-
+            const R = 6371; // Radius der Erde in km
             const φ1 = lat1 * Math.PI / 180;
             const φ2 = lat2 * Math.PI / 180;
             const Δφ = (lat2 - lat1) * Math.PI / 180;
@@ -88,16 +120,7 @@ $stmt->close();
                       Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-            return R * c * 1000; // in Metern
-        }
-
-        function computeDistanceFromMarker() {
-            const lat1 = parseFloat(locations[currentLocationIndex].latitude);
-            const lon1 = parseFloat(locations[currentLocationIndex].longitude);
-            const lat2 = markerPosition.lat();
-            const lon2 = markerPosition.lng();
-
-            return calculateDistance(lat1, lon1, lat2, lon2);
+            return R * c * 1000; // Entfernung in Metern
         }
 
         function calculatePoints(distance) {
@@ -118,8 +141,6 @@ $stmt->close();
 
             const panorama = new google.maps.StreetViewPanorama(document.getElementById("street-view"), {
                 position: randomLocation,
-                pov: {heading: 165, pitch: 0},
-                zoom: 1,
                 disableDefaultUI: true
             });
 
@@ -145,21 +166,47 @@ $stmt->close();
 
         document.getElementById('submit-btn').addEventListener('click', () => {
             if (markerPosition) {
-                const distance = computeDistanceFromMarker();
-                const points = calculatePoints(distance);
+                const distance = calculateDistance(
+                    parseFloat(locations[currentLocationIndex].latitude),
+                    parseFloat(locations[currentLocationIndex].longitude),
+                    markerPosition.lat(),
+                    markerPosition.lng()
+                );
 
-                alert(`Entfernung: ${distance.toFixed(2)} Meter\nPunkte: ${points}`);
+                const score = calculatePoints(distance);
 
-                if (currentLocationIndex < locations.length - 1) {
-                    currentLocationIndex++;
-                    initMap();
-                } else {
-                    alert("Das Spiel ist zu Ende!");
-                }
+                fetch(window.location.href, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        lobbyCode: lobbyCode,
+                        runde: currentLocationIndex + 1,
+                        spielername: playerName,
+                        lat: markerPosition.lat(),
+                        lng: markerPosition.lng(),
+                        score: score
+                    })
+                }).then(response => response.json())
+                  .then(data => {
+                      if (data.success) {
+                          if (currentLocationIndex < locations.length - 1) {
+                              currentLocationIndex++;
+                              initMap();
+                          } else {
+                              window.location.href = `show_score.php?lobbyCode=${lobbyCode}`;
+                          }
+                      } else {
+                          alert('Fehler beim Absenden der Daten.');
+                      }
+                  });
             } else {
                 alert("Bitte setzen Sie zuerst einen Marker auf der Karte!");
             }
         });
+
+        window.initMap = initMap;
     </script>
 </body>
 </html>
