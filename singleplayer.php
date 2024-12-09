@@ -1,6 +1,42 @@
 <?php
 session_start();
 require 'connection.php';
+
+// Punkteinitialisierung
+if (!isset($_SESSION['total_points'])) {
+    $_SESSION['total_points'] = 0;
+}
+
+// Punkte speichern, wenn die Runde endet
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['points'])) {
+    // Überprüfen, ob der Benutzername in der Session verfügbar ist
+    if (!isset($_SESSION['username'])) {
+        echo json_encode(['success' => false, 'error' => 'Benutzername nicht gesetzt']);
+        exit;
+    }
+
+    $username = $_SESSION['username']; // Benutzername aus der Session
+    $roundPoints = intval($_POST['points']);
+    $_SESSION['total_points'] += $roundPoints;
+
+    // Punkte in der Datenbank speichern
+    $query = "UPDATE login SET score = score + ? WHERE username = ?";
+    $stmt = $conn->prepare($query);
+    if (!$stmt) {
+        die("Fehler beim Vorbereiten des Statements: " . $conn->error);
+    }
+
+    // Binde die Parameter: Punkte (Ganzzahl) und Benutzername (String)
+    $stmt->bind_param("is", $roundPoints, $username);
+
+    if (!$stmt->execute()) {
+        die("Fehler beim Speichern der Punkte: " . $stmt->error);
+    }
+
+    // Erfolgsmeldung zurückgeben
+    echo json_encode(['success' => true, 'total_points' => $_SESSION['total_points']]);
+    exit;
+}
 ?>
 
 <!doctype html>
@@ -24,16 +60,10 @@ require 'connection.php';
             height: 30vh;
             width: 30vw;
             position: absolute;
-            bottom: 20px;
+            bottom: 65px;
             right: 20px;
             border: 1px solid #ccc;
             z-index: 100;
-        }
-
-        #map:hover {
-            height: 35vh;
-            width: 35vw;
-            transition: 0.3s ease-in-out;
         }
 
         #street-view {
@@ -41,16 +71,17 @@ require 'connection.php';
             width: 100%;
         }
 
-        #submit-btn {
+        #submit-btn, #next-btn {
             position: absolute;
-            bottom: 20px;
+            bottom: 30px;
             right: 20px;
             height: 4vh;
             width: 30vw;
-            transform: translateX(-50%);
             z-index: 1000;
-            background-color: #007bff;
-            color: white;
+        }
+
+        #next-btn {
+            display: none;
         }
     </style>
 </head>
@@ -61,16 +92,16 @@ require 'connection.php';
 <div>
     <div id="map"></div>
     <button id="submit-btn" class="btn btn-primary">Absenden</button>
+    <button id="next-btn" class="btn btn-success">Nächste Runde</button>
 </div>
-
 
 <script>
     let smallMap; // Kleine Karte
-    let smallMapMarker; // Marker in der kleinen Karte
-    let markerPosition; // Variable zum Speichern der Koordinaten des Markers
+    let originalMarker; // Marker für die ursprüngliche Position
+    let userMarker; // Marker für die gesetzte Position
+    let markerPosition; // Position des gesetzten Markers
     let randomLocation; // Zufällige Position für Street View
 
-    // Generiere eine zufällige Position in Krems
     function getRandomLocationInKrems() {
         const latRange = {min: 48.392, max: 48.428};
         const lngRange = {min: 15.577, max: 15.625};
@@ -81,7 +112,6 @@ require 'connection.php';
         return {lat: randomLat, lng: randomLng};
     }
 
-    // Prüfe, ob Street View verfügbar ist
     function checkForStreetView(location, callback) {
         const streetViewService = new google.maps.StreetViewService();
         streetViewService.getPanorama({location: location, radius: 50}, (data, status) => {
@@ -89,7 +119,6 @@ require 'connection.php';
         });
     }
 
-    // Suche eine gültige Street View Position
     function getValidRandomLocation(callback) {
         let attempts = 0;
 
@@ -114,54 +143,39 @@ require 'connection.php';
         tryRandomLocation();
     }
 
-    // Berechnung der Entfernung zwischen zwei geographischen Punkten (Haversine-Formel)
     function calculateDistance(lat1, lon1, lat2, lon2) {
         const R = 6371; // Erdradius in Kilometern
-
-        // Umrechnung der Koordinaten von Grad in Bogenmaß
         const φ1 = lat1 * Math.PI / 180;
         const φ2 = lat2 * Math.PI / 180;
         const Δφ = (lat2 - lat1) * Math.PI / 180;
         const Δλ = (lon2 - lon1) * Math.PI / 180;
 
-        // Haversine-Formel
         const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
             Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-        // Entfernung berechnen
-        const distance = R * c * 1000; // in Metern
-        return distance;
+        return R * c * 1000; // in Metern
     }
 
-    // Berechnung der Entfernung zwischen der zufälligen Position und dem Marker
     function computeDistanceFromMarker() {
         const lat1 = randomLocation.lat;
         const lon1 = randomLocation.lng;
         const lat2 = markerPosition.lat();
         const lon2 = markerPosition.lng();
 
-        const distance = calculateDistance(lat1, lon1, lat2, lon2);
-        console.log(`Die Entfernung zwischen der zufälligen Position und dem Marker beträgt ${distance.toFixed(2)} Meter.`);
-
-        return distance;
+        return calculateDistance(lat1, lon1, lat2, lon2);
     }
 
-    // Punkte basierend auf der Entfernung berechnen (0-5m => 5000 Punkte, 1000m => 0 Punkte)
     function calculatePoints(distance) {
         let points;
-
         if (distance <= 5) {
-            points = 5000; // 0-5 Meter => 5000 Punkte
+            points = 5000;
         } else if (distance >= 1000) {
-            points = 0; // 1000 Meter oder mehr => 0 Punkte
+            points = 0;
         } else {
-            // Lineare Interpolation zwischen 5000 und 0 Punkten
             points = 5000 * (1 - (distance - 5) / (1000 - 5));
         }
-
-        points = Math.round(points);
-        return points;
+        return Math.round(points);
     }
 
     function initMap() {
@@ -169,7 +183,6 @@ require 'connection.php';
             randomLocation = location;
             console.log("Verwendete Position für Street View:", randomLocation);
 
-            // Street View initialisieren (unabhängig von der kleinen Karte)
             const panorama = new google.maps.StreetViewPanorama(document.getElementById("street-view"), {
                 position: randomLocation,
                 pov: {heading: 165, pitch: 0},
@@ -181,45 +194,59 @@ require 'connection.php';
                 fullscreenControl: false,
             });
 
-            // Kleine Karte (rechts unten) initialisieren
             smallMap = new google.maps.Map(document.getElementById("map"), {
-                center: randomLocation,
+                center: { lat: 48.4095, lng: 15.6106 },
                 zoom: 12,
                 mapTypeId: google.maps.MapTypeId.ROADMAP,
-                disableDefaultUI: true, // Entfernt UI-Elemente für die kleine Karte
+                disableDefaultUI: true,
             });
 
-            // Marker wird initial nicht angezeigt
-            smallMapMarker = new google.maps.Marker({
+            originalMarker = new google.maps.Marker({
                 position: randomLocation,
                 map: smallMap,
-                visible: false // Marker ist zunächst unsichtbar
+                visible: false, // Marker wird initial nicht angezeigt
+                icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
             });
 
-            // Klick-Listener für die kleine Karte (aktualisiert Marker und speichert Koordinaten)
-            smallMap.addEventListener("click", (event) => {
+            userMarker = new google.maps.Marker({
+                map: smallMap,
+                visible: false, // Marker wird initial nicht angezeigt
+                draggable: false,
+                icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+            });
+
+            smallMap.addListener("click", (event) => {
                 const clickedLocation = event.latLng;
 
-                // Aktualisiere Marker-Position und mache ihn sichtbar
-                smallMapMarker.setPosition(clickedLocation);
-                smallMapMarker.setVisible(true); // Marker wird sichtbar
+                userMarker.setPosition(clickedLocation);
+                userMarker.setVisible(true);
 
-                // Speichere Koordinaten des Markers
                 markerPosition = clickedLocation;
                 console.log("Neue Marker-Position:", clickedLocation.toString());
             });
         });
     }
 
-    // Absenden Button Event
     document.getElementById('submit-btn').addEventListener('click', () => {
         if (markerPosition) {
             const distance = computeDistanceFromMarker();
             const points = calculatePoints(distance);
+
             alert(`Entfernung: ${distance.toFixed(2)} Meter\nPunkte: ${points}`);
+
+            // Zeige beide Marker an
+            originalMarker.setVisible(true);
+            userMarker.setVisible(true);
+
+            // Zeige nur den "Zum Hauptmenü"-Button
+            document.getElementById('submit-btn').style.display = 'none';
+            document.querySelector('#next-btn').style.display = 'block';
         } else {
             alert("Bitte setzen Sie zuerst einen Marker auf der Karte!");
         }
+    });
+    document.getElementById('next-btn').addEventListener('click', () => {
+        location.reload(); // Lädt die nächste Runde
     });
 </script>
 
