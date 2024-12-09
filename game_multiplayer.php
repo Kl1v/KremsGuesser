@@ -38,32 +38,35 @@ $stmt->close();
     <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCEtD-b25DbDtWDqwJGcVFpJhzKiYU9rjk&callback=initMap&libraries=maps,marker&v=beta"></script>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="stylemain.css">
+    <style>
+        #street-view {
+            width: 100%;
+            height: 100vh;
+        }
+        #map {
+            height: 30vh;
+            width: 30vw;
+            position: absolute;
+            bottom: 50px;
+            right: 20px;
+            border: 1px solid #ccc;
+            z-index: 100;
+        }
+        #submit-btn {
+            position: absolute;
+            width: 30vw;
+            bottom: 10px;
+            z-index: 101;
+            right: 20px;
+        }
+    </style>
 </head>
 <body>
-    <?php require 'navbar.php'?>
+    <?php require 'navbar.php'; ?>
 
-    <div class="container mt-4">
-        <div class="row">
-            <div class="col-md-12 mb-4">
-                <h2 class="text-center">Multiplayer-Spiel - Lobby: <?php echo htmlspecialchars($lobbyCode); ?></h2>
-            </div>
-            <div class="col-md-12">
-                <!-- Street View Container -->
-                <div id="street-view" style="width: 100%; height: 400px;"></div>
-            </div>
-            <div class="col-md-12 mt-4">
-                <!-- Kleine Karte Container -->
-                <div id="map" style="width: 100%; height: 400px;"></div>
-            </div>
-        </div>
-
-        <!-- Button zum Absenden der Markierung -->
-        <div class="row mt-4">
-            <div class="col-md-12 text-center">
-                <button id="submit-btn" class="btn btn-primary">Entfernung Berechnen und Punkte Erhalten</button>
-            </div>
-        </div>
-    </div>
+    <div id="street-view"></div>
+    <div id="map"></div>
+    <button id="submit-btn" class="btn btn-primary">Absenden</button>
 
     <script>
         let smallMap; // Kleine Karte
@@ -72,123 +75,84 @@ $stmt->close();
         let currentLocationIndex = 0; // Startindex der Locations
         let locations = <?php echo json_encode($locations); ?>; // Locations aus PHP
 
-        // Generiere eine zufällige Position in Krems
-        function getRandomLocationInKrems() {
-            const latRange = {min: 48.392, max: 48.428};
-            const lngRange = {min: 15.577, max: 15.625};
-
-            const randomLat = Math.random() * (latRange.max - latRange.min) + latRange.min;
-            const randomLng = Math.random() * (lngRange.max - lngRange.min) + lngRange.min;
-
-            return {lat: randomLat, lng: randomLng};
-        }
-
         // Berechnung der Entfernung zwischen zwei geographischen Punkten (Haversine-Formel)
         function calculateDistance(lat1, lon1, lat2, lon2) {
             const R = 6371; // Erdradius in Kilometern
 
-            // Umrechnung der Koordinaten von Grad in Bogenmaß
             const φ1 = lat1 * Math.PI / 180;
             const φ2 = lat2 * Math.PI / 180;
             const Δφ = (lat2 - lat1) * Math.PI / 180;
             const Δλ = (lon2 - lon1) * Math.PI / 180;
 
-            // Haversine-Formel
             const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+                      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-            // Entfernung berechnen
-            const distance = R * c * 1000; // in Metern
-            return distance;
+            return R * c * 1000; // in Metern
         }
 
-        // Berechnung der Entfernung zwischen der zufälligen Position und dem Marker
         function computeDistanceFromMarker() {
-            const lat1 = locations[currentLocationIndex].latitude;
-            const lon1 = locations[currentLocationIndex].longitude;
+            const lat1 = parseFloat(locations[currentLocationIndex].latitude);
+            const lon1 = parseFloat(locations[currentLocationIndex].longitude);
             const lat2 = markerPosition.lat();
             const lon2 = markerPosition.lng();
 
-            const distance = calculateDistance(lat1, lon1, lat2, lon2);
-            console.log(`Die Entfernung zwischen der zufälligen Position und dem Marker beträgt ${distance.toFixed(2)} Meter.`);
-
-            return distance;
+            return calculateDistance(lat1, lon1, lat2, lon2);
         }
 
-        // Punkte basierend auf der Entfernung berechnen (0-5m => 5000 Punkte, 1000m => 0 Punkte)
         function calculatePoints(distance) {
-            let points;
-
             if (distance <= 5) {
-                points = 5000; // 0-5 Meter => 5000 Punkte
+                return 5000;
             } else if (distance >= 1000) {
-                points = 0; // 1000 Meter oder mehr => 0 Punkte
+                return 0;
             } else {
-                // Lineare Interpolation zwischen 5000 und 0 Punkten
-                points = 5000 * (1 - (distance - 5) / (1000 - 5));
+                return Math.round(5000 * (1 - (distance - 5) / (1000 - 5)));
             }
-
-            points = Math.round(points);
-            return points;
         }
 
         function initMap() {
-            // Die erste Position aus der Locations-Array verwenden
-            const randomLocation = { lat: locations[currentLocationIndex].latitude, lng: locations[currentLocationIndex].longitude };
+            const randomLocation = {
+                lat: parseFloat(locations[currentLocationIndex].latitude),
+                lng: parseFloat(locations[currentLocationIndex].longitude)
+            };
 
-            // Street View initialisieren
             const panorama = new google.maps.StreetViewPanorama(document.getElementById("street-view"), {
                 position: randomLocation,
                 pov: {heading: 165, pitch: 0},
                 zoom: 1,
-                disableDefaultUI: true,
-                linksControl: false,
-                addressControl: false,
-                panControl: false,
-                fullscreenControl: false,
+                disableDefaultUI: true
             });
 
-            // Kleine Karte initialisieren
             smallMap = new google.maps.Map(document.getElementById("map"), {
                 center: randomLocation,
                 zoom: 12,
                 mapTypeId: google.maps.MapTypeId.ROADMAP,
-                disableDefaultUI: true, // Entfernt UI-Elemente für die kleine Karte
+                disableDefaultUI: true
             });
 
-            // Marker wird initial nicht angezeigt
             smallMapMarker = new google.maps.Marker({
                 position: randomLocation,
                 map: smallMap,
-                visible: false // Marker ist zunächst unsichtbar
+                visible: false
             });
 
-            // Klick-Listener für die kleine Karte (aktualisiert Marker und speichert Koordinaten)
-            smallMap.addEventListener("click", (event) => {
-                const clickedLocation = event.latLng;
-
-                // Aktualisiere Marker-Position und mache ihn sichtbar
-                smallMapMarker.setPosition(clickedLocation);
-                smallMapMarker.setVisible(true); // Marker wird sichtbar
-
-                // Speichere Koordinaten des Markers
-                markerPosition = clickedLocation;
-                console.log("Neue Marker-Position:", clickedLocation.toString());
+            smallMap.addListener("click", (event) => {
+                markerPosition = event.latLng;
+                smallMapMarker.setPosition(markerPosition);
+                smallMapMarker.setVisible(true);
             });
         }
 
-        // Absenden Button Event
         document.getElementById('submit-btn').addEventListener('click', () => {
             if (markerPosition) {
                 const distance = computeDistanceFromMarker();
                 const points = calculatePoints(distance);
+
                 alert(`Entfernung: ${distance.toFixed(2)} Meter\nPunkte: ${points}`);
 
-                // Nächste Runde
                 if (currentLocationIndex < locations.length - 1) {
                     currentLocationIndex++;
-                    initMap(); // Karte und StreetView aktualisieren
+                    initMap();
                 } else {
                     alert("Das Spiel ist zu Ende!");
                 }
@@ -197,7 +161,5 @@ $stmt->close();
             }
         });
     </script>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

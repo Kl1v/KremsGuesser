@@ -8,8 +8,38 @@ if (!isset($_SESSION['user_name']) || empty($_SESSION['user_name'])) {
     die('Benutzername ist nicht gesetzt. Bitte melde dich an.');
 }
 
+// Funktion zur Generierung zufälliger Koordinaten in Krems
+function getRandomLocationInKrems()
+{
+    $latMin = 48.392; // Minimaler Breitengrad
+    $latMax = 48.428; // Maximaler Breitengrad
+    $lngMin = 15.577; // Minimaler Längengrad
+    $lngMax = 15.625; // Maximaler Längengrad
+
+    $latitude = rand($latMin * 1000000, $latMax * 1000000) / 1000000;
+    $longitude = rand($lngMin * 1000000, $lngMax * 1000000) / 1000000;
+
+    return ['lat' => $latitude, 'lng' => $longitude];
+}
+
+// Funktion zur Validierung, ob Street View für eine Position verfügbar ist
+function isStreetViewAvailable($lat, $lng)
+{
+    $apiKey = "AIzaSyCEtD-b25DbDtWDqwJGcVFpJhzKiYU9rjk"; // Ersetze mit deinem API-Schlüssel
+    $url = "https://maps.googleapis.com/maps/api/streetview/metadata?location=$lat,$lng&key=$apiKey";
+
+    $response = file_get_contents($url);
+    if ($response === false) {
+        return false;
+    }
+
+    $data = json_decode($response, true);
+    return isset($data['status']) && $data['status'] === "OK";
+}
+
 // Funktion zur Erstellung der Lobby
-function createLobby($conn, $lobbyCode, $rounds, $timeLimit) {
+function createLobby($conn, $lobbyCode, $rounds, $timeLimit)
+{
     // Überprüfen, ob die Lobby bereits existiert
     $stmt = $conn->prepare("SELECT * FROM lobbies WHERE code = ?");
     $stmt->bind_param("s", $lobbyCode);
@@ -17,12 +47,11 @@ function createLobby($conn, $lobbyCode, $rounds, $timeLimit) {
     $result = $stmt->get_result();
 
     if ($result->num_rows === 0) {
-        // Lobby existiert nicht, neu erstellen
         $stmt = $conn->prepare("INSERT INTO lobbies (code, rounds, time_limit) VALUES (?, ?, ?)");
         $stmt->bind_param("sii", $lobbyCode, $rounds, $timeLimit);
         if (!$stmt->execute()) {
             $stmt->close();
-            return false; // Fehler beim Erstellen der Lobby
+            return false;
         }
     }
     $stmt->close();
@@ -32,38 +61,32 @@ function createLobby($conn, $lobbyCode, $rounds, $timeLimit) {
     $stmt->bind_param("ss", $_SESSION['user_name'], $lobbyCode);
     if (!$stmt->execute()) {
         $stmt->close();
-        return false; // Fehler beim Hinzufügen des Hosts
+        return false;
     }
     $stmt->close();
 
     // Zufällige Positionen für jede Runde generieren
     for ($i = 1; $i <= $rounds; $i++) {
-        $location = getRandomLocationInKrems(); // Zufällige Position generieren
+        $location = null;
+
+        // Wiederholen, bis eine valide Position gefunden wird
+        do {
+            $randomLocation = getRandomLocationInKrems();
+            $isValid = isStreetViewAvailable($randomLocation['lat'], $randomLocation['lng']);
+            if ($isValid) {
+                $location = $randomLocation;
+            }
+        } while ($location === null);
+
         $stmt = $conn->prepare("INSERT INTO locations (lobby_code, round, latitude, longitude) VALUES (?, ?, ?, ?)");
         $stmt->bind_param("sidd", $lobbyCode, $i, $location['lat'], $location['lng']);
         if (!$stmt->execute()) {
             $stmt->close();
-            return false; // Fehler beim Hinzufügen der Position
+            return false;
         }
     }
 
     return true;
-}
-
-// Funktion zur Generierung zufälliger Koordinaten in Krems
-function getRandomLocationInKrems() {
-    // Breiten- und Längengradbereich für Krems definieren
-    $latMin = 48.392; // Minimaler Breitengrad
-    $latMax = 48.428; // Maximaler Breitengrad
-    $lngMin = 15.577; // Minimaler Längengrad
-    $lngMax = 15.625; // Maximaler Längengrad
-
-    // Zufälligen Breitengrad und Längengrad berechnen
-    $latitude = rand($latMin * 1000000, $latMax * 1000000) / 1000000;
-    $longitude = rand($lngMin * 1000000, $lngMax * 1000000) / 1000000;
-
-    // Koordinaten zurückgeben
-    return ['lat' => $latitude, 'lng' => $longitude];
 }
 
 // POST-Request verarbeiten
@@ -72,13 +95,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $rounds = isset($_POST['rounds']) ? intval($_POST['rounds']) : null;
     $timeLimit = isset($_POST['timeLimit']) ? intval($_POST['timeLimit']) : null;
 
-    // Validierung der Eingaben
     if (!$lobbyCode || !$rounds || !$timeLimit) {
         $errorMessage = 'Alle Felder müssen ausgefüllt sein!';
     } else {
         $result = createLobby($conn, $lobbyCode, $rounds, $timeLimit);
         if ($result) {
-            // Weiterleitung zur Lobby-Startseite
             header("Location: start_lobby.php?code=" . $lobbyCode);
             exit;
         } else {
@@ -90,7 +111,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Generiere einen eindeutigen Code für die Lobby
 $lobbyCode = generateUniqueLobbyCode($conn);
 ?>
-
 <!DOCTYPE html>
 <html lang="de">
 
