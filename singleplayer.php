@@ -8,33 +8,45 @@ if (!isset($_SESSION['total_points'])) {
 }
 
 // Punkte speichern, wenn die Runde endet
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['points'])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    header('Content-Type: application/json');
+
     // Überprüfen, ob der Benutzername in der Session verfügbar ist
-    if (!isset($_SESSION['username'])) {
+    if (!isset($_SESSION['user_name'])) {
         echo json_encode(['success' => false, 'error' => 'Benutzername nicht gesetzt']);
         exit;
     }
 
-    $username = $_SESSION['username']; // Benutzername aus der Session
-    $roundPoints = intval($_POST['points']);
+    // Empfangen der Punkte aus der Anfrage (JSON-Body)
+    $data = json_decode(file_get_contents('php://input'), true);
+
+    // Überprüfen, ob 'points' vorhanden ist
+    if (!isset($data['points'])) {
+        echo json_encode(['success' => false, 'error' => 'Punkte fehlen']);
+        exit;
+    }
+
+    $username = $_SESSION['user_name']; // Benutzername aus der Session
+    $roundPoints = intval($data['points']);
     $_SESSION['total_points'] += $roundPoints;
 
     // Punkte in der Datenbank speichern
-    $query = "UPDATE login SET score = score + ? WHERE username = ?";
-    $stmt = $conn->prepare($query);
-    if (!$stmt) {
-        die("Fehler beim Vorbereiten des Statements: " . $conn->error);
+    try {
+        // Update-Statement vorbereiten und ausführen
+        $stmt = $conn->prepare("UPDATE login SET score = score + ? WHERE username = ?");
+        $stmt->bind_param("is", $roundPoints, $username);
+        $stmt->execute();
+
+        if ($stmt->affected_rows > 0) {
+            echo json_encode(['success' => true, 'total_points' => $_SESSION['total_points']]);
+        } else {
+            echo json_encode(['success' => false, 'error' => 'Datenbankupdate fehlgeschlagen']);
+        }
+        $stmt->close();
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
     }
 
-    // Binde die Parameter: Punkte (Ganzzahl) und Benutzername (String)
-    $stmt->bind_param("is", $roundPoints, $username);
-
-    if (!$stmt->execute()) {
-        die("Fehler beim Speichern der Punkte: " . $stmt->error);
-    }
-
-    // Erfolgsmeldung zurückgeben
-    echo json_encode(['success' => true, 'total_points' => $_SESSION['total_points']]);
     exit;
 }
 ?>
@@ -48,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['points'])) {
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="stylemain.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCEtD-b25DbDtWDqwJGcVFpJhzKiYU9rjk&callback=initMap&libraries=maps,marker&v=beta"></script>
+    <script async src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCQnFQURsReLCE66o_kF2oNvgFMDkHyO6E&callback=initMap&libraries=maps,marker&v=beta"></script>
     <style>
         body {
             margin: 0;
@@ -228,23 +240,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['points'])) {
     }
 
     document.getElementById('submit-btn').addEventListener('click', () => {
-        if (markerPosition) {
-            const distance = computeDistanceFromMarker();
-            const points = calculatePoints(distance);
+    if (markerPosition) {
+        const distance = computeDistanceFromMarker();
+        const points = calculatePoints(distance);
 
-            alert(`Entfernung: ${distance.toFixed(2)} Meter\nPunkte: ${points}`);
+        alert(`Entfernung: ${distance.toFixed(2)} Meter\nPunkte: ${points}`);
 
-            // Zeige beide Marker an
-            originalMarker.setVisible(true);
-            userMarker.setVisible(true);
+        // Zeige beide Marker an
+        originalMarker.setVisible(true);
+        userMarker.setVisible(true);
 
-            // Zeige nur den "Zum Hauptmenü"-Button
-            document.getElementById('submit-btn').style.display = 'none';
-            document.querySelector('#next-btn').style.display = 'block';
-        } else {
-            alert("Bitte setzen Sie zuerst einen Marker auf der Karte!");
-        }
-    });
+        // Punkte an den Server senden
+        fetch('singleplayer.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ points: points })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                console.log(`Punkte erfolgreich gespeichert: ${data.total_points}`);
+                alert(`Gesamte Punkte: ${data.total_points}`);
+            } else {
+                console.error('Fehler beim Speichern der Punkte:', data.error);
+                alert('Fehler beim Speichern der Punkte.');
+            }
+        })
+        .catch(error => {
+            console.error('Fehler:', error);
+        });
+
+        // Zeige nur den "Zum Hauptmenü"-Button
+        document.getElementById('submit-btn').style.display = 'none';
+        document.querySelector('#next-btn').style.display = 'block';
+    } else {
+        alert("Bitte setzen Sie zuerst einen Marker auf der Karte!");
+    }
+});
+
     document.getElementById('next-btn').addEventListener('click', () => {
         location.reload(); // Lädt die nächste Runde
     });
