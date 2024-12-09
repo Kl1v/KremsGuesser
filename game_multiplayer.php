@@ -17,6 +17,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         isset($data['lobbyCode'], $data['runde'], $data['spielername'], $data['lat'], $data['lng'], $data['score']) &&
         $data['lobbyCode'] === $lobbyCode
     ) {
+        // Überprüfen, ob der Spieler bereits für diese Runde und Lobby einen Eintrag hat
+        $stmt = $conn->prepare("SELECT * FROM guesses WHERE lobby_id = ? AND runde = ? AND spielername = ?");
+        $stmt->bind_param("sis", $data['lobbyCode'], $data['runde'], $data['spielername']);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            // Spieler hat bereits einen Guess abgegeben, also nichts tun oder Fehlermeldung
+            echo json_encode(['success' => false, 'error' => 'Bereits abgegeben']);
+            $stmt->close();
+            exit;
+        }
+
+        // Wenn noch kein Eintrag existiert, führe den Insert aus
         $stmt = $conn->prepare(
             "INSERT INTO guesses (lobby_id, runde, spielername, lat, lng, score) 
              VALUES (?, ?, ?, ?, ?, ?)"
@@ -166,6 +180,9 @@ $stmt->close();
 
         document.getElementById('submit-btn').addEventListener('click', () => {
             if (markerPosition) {
+                const submitButton = document.getElementById('submit-btn');
+                submitButton.disabled = true; // Deaktiviert den Button, um mehrfaches Absenden zu verhindern
+
                 const distance = calculateDistance(
                     parseFloat(locations[currentLocationIndex].latitude),
                     parseFloat(locations[currentLocationIndex].longitude),
@@ -191,15 +208,12 @@ $stmt->close();
                 }).then(response => response.json())
                   .then(data => {
                       if (data.success) {
-                          if (currentLocationIndex < locations.length - 1) {
-                              currentLocationIndex++;
-                              initMap();
-                          } else {
-                              window.location.href = `show_score.php?lobbyCode=${lobbyCode}`;
-                          }
+                          // Weiterleitung nach jeder Runde zu show_score.php
+                          window.location.href = `show_score.php?lobbyCode=${lobbyCode}`;
                       } else {
-                          alert('Fehler beim Absenden der Daten.');
+                          alert('Fehler beim Absenden der Daten: ' + (data.error || 'Unbekannter Fehler.'));
                       }
+                      submitButton.disabled = false; // Button nach Abschluss wieder aktivieren
                   });
             } else {
                 alert("Bitte setzen Sie zuerst einen Marker auf der Karte!");

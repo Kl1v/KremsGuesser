@@ -11,7 +11,7 @@ if (isset($_GET['lobbyCode'])) {
 
 // Alle gespeicherten Guesse für die angegebene Lobby abfragen
 $stmt = $conn->prepare(
-    "SELECT g.runde, g.spielername, g.lat, g.lng, g.score 
+    "SELECT g.runde, g.spielername, g.lat, g.lng, g.score, p.is_host 
      FROM guesses g
      JOIN players p ON g.lobby_id = p.lobby_code
      WHERE g.lobby_id = ? 
@@ -41,32 +41,58 @@ $stmt->bind_result($totalRounds);
 $stmt->fetch();
 $stmt->close();
 
-// Wenn alle Runden gespielt sind, löschen wir die Einträge
-if (count($guesses) / $totalRounds === 1) {
-    // Löschen der Guesse-Einträge und der Locations
-    $conn->begin_transaction();
+// Überprüfen, wie viele Spieler ihre Guess bereits abgegeben haben
+$stmt = $conn->prepare("SELECT COUNT(*) FROM guesses WHERE lobby_id = ? AND runde = ?");
+$stmt->bind_param("si", $lobbyCode, $guesses[0]['runde']);
+$stmt->execute();
+$stmt->bind_result($guessesCount);
+$stmt->fetch();
+$stmt->close();
 
-    try {
-        // Löschen der Guesse
-        $stmt = $conn->prepare("DELETE FROM guesses WHERE lobby_id = ?");
-        $stmt->bind_param("s", $lobbyCode);
-        $stmt->execute();
+// Überprüfen, wie viele Spieler in der Lobby sind
+$stmt = $conn->prepare("SELECT COUNT(*) FROM players WHERE lobby_code = ?");
+$stmt->bind_param("s", $lobbyCode);
+$stmt->execute();
+$stmt->bind_result($totalPlayers);
+$stmt->fetch();
+$stmt->close();
 
-        // Löschen der Locations
-        $stmt = $conn->prepare("DELETE FROM locations WHERE lobby_code = ?");
-        $stmt->bind_param("s", $lobbyCode);
-        $stmt->execute();
+$allGuessesSubmitted = ($guessesCount == $totalPlayers);
 
-        // Löschen der Lobby
-        $stmt = $conn->prepare("DELETE FROM lobbies WHERE code = ?");
-        $stmt->bind_param("s", $lobbyCode);
-        $stmt->execute();
-
-        $conn->commit();
-    } catch (Exception $e) {
-        $conn->rollback();
-        die("Fehler beim Löschen der Lobby und Guesse: " . $e->getMessage());
+// Abrufen der echten Koordinaten für jede Runde aus der locations-Tabelle
+$locations = [];
+foreach ($guesses as $guess) {
+    $stmt = $conn->prepare("SELECT latitude, longitude FROM locations WHERE round = ? AND lobby_code = ?");
+    $stmt->bind_param("is", $guess['runde'], $lobbyCode);
+    $stmt->execute();
+    $stmt->bind_result($lat, $lng);
+    if ($stmt->fetch()) {
+        $locations[$guess['runde']] = ['lat' => $lat, 'lng' => $lng];
     }
+    $stmt->close();
+}
+
+$response = [
+    'guesses' => $guesses,
+    'locations' => $locations,
+    'allGuessesSubmitted' => $allGuessesSubmitted
+];
+
+// Rückgabe der Daten als JSON
+echo json_encode($response);
+
+// Funktion zur Berechnung der Entfernung zwischen zwei geografischen Punkten (in Kilometern)
+function calculateDistance($lat1, $lon1, $lat2, $lon2) {
+    $R = 6371; // Radius der Erde in km
+    $phi1 = deg2rad($lat1);
+    $phi2 = deg2rad($lat2);
+    $deltaPhi = deg2rad($lat2 - $lat1);
+    $deltaLambda = deg2rad($lon2 - $lon1);
+
+    $a = sin($deltaPhi / 2) * sin($deltaPhi / 2) + cos($phi1) * cos($phi2) * sin($deltaLambda / 2) * sin($deltaLambda / 2);
+    $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+    return $R * $c; // Entfernung in Kilometern
 }
 ?>
 
@@ -76,8 +102,14 @@ if (count($guesses) / $totalRounds === 1) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ergebnisse für Lobby <?php echo htmlspecialchars($lobbyCode); ?></title>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCEtD-b25DbDtWDqwJGcVFpJhzKiYU9rjk&callback=initMap&libraries=places" async defer></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        #map {
+            height: 60vh;
+            width: 100%;
+            margin-top: 20px;
+        }
         table {
             margin-top: 20px;
             width: 100%;
@@ -90,35 +122,116 @@ if (count($guesses) / $totalRounds === 1) {
     </style>
 </head>
 <body>
-        <? require 'navbar.php'?>
-<div class="container">
-    <h1 class="my-4">Ergebnisse für Lobby: <?php echo htmlspecialchars($lobbyCode); ?></h1>
+    <?php require 'navbar.php'; ?>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Runde</th>
-                <th>Spielername</th>
-                <th>Position (Lat/Lng)</th>
-                <th>Punkte</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($guesses as $guess): ?>
+    <div class="container">
+        <div id="map"></div>
+
+        <table class="table">
+            <thead>
                 <tr>
-                    <td><?php echo $guess['runde']; ?></td>
-                    <td><?php echo htmlspecialchars($guess['spielername']); ?></td>
-                    <td><?php echo $guess['lat'] . ', ' . $guess['lng']; ?></td>
-                    <td><?php echo $guess['score']; ?></td>
+                    <th>Runde</th>
+                    <th>Spielername</th>
+                    <th>Entfernung (in km)</th>
+                    <th>Punkte</th>
                 </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                <?php foreach ($guesses as $guess): 
+                    $roundLocation = $locations[$guess['runde']] ?? ['lat' => 51.1657, 'lng' => 10.4515]; // Standardkoordinaten wenn keine gefunden
+                    $distance = calculateDistance($roundLocation['lat'], $roundLocation['lng'], $guess['lat'], $guess['lng']);
+                ?>
+                    <tr>
+                        <td><?php echo $guess['runde']; ?></td>
+                        <td><?php echo htmlspecialchars($guess['spielername']); ?></td>
+                        <td><?php echo number_format($distance, 2); ?> km</td>
+                        <td><?php echo $guess['score']; ?></td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
 
-    <div class="mt-3">
-        <a href="game.php?code=<?php echo $lobbyCode; ?>" class="btn btn-primary">Zurück zum Spiel</a>
+        <div class="mt-3">
+            <button id="next-round-btn" class="btn btn-primary" disabled>Zur nächsten Runde</button>
+        </div>
     </div>
-</div>
+
+    <script>
+        let map;
+        let markers = [];
+        let correctMarker;
+        let playerGuesses = [];
+        const lobbyCode = "<?php echo $lobbyCode; ?>";
+        const locations = <?php echo json_encode($locations); ?>;
+        const nextRoundButton = document.getElementById('next-round-btn');
+
+        // Funktion zur Aktualisierung der Spielergebnisse
+        function updateResults() {
+            fetch('show_score.php?lobbyCode=' + lobbyCode)
+                .then(response => response.json())
+                .then(data => {
+                    playerGuesses = data.guesses;
+
+                    // Aktualisieren der Karte mit den neuen Markern
+                    updateMap();
+
+                    // Wenn alle Spieler ihre Guess abgegeben haben, Button aktivieren
+                    nextRoundButton.disabled = !data.allGuessesSubmitted;
+                })
+                .catch(error => console.error('Fehler beim Abrufen der Ergebnisse:', error));
+        }
+
+        // Karte aktualisieren
+        function updateMap() {
+            // Entferne bestehende Marker, bevor neue gesetzt werden
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+
+            // Initialisiere die Karte
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 6,
+                center: locations[1] || { lat: 51.1657, lng: 10.4515 } // Wenn keine Koordinaten, dann Standardkoordinaten
+            });
+
+            // Marker für jede Runde
+            for (let round in locations) {
+                const location = locations[round];
+                correctMarker = new google.maps.Marker({
+                    position: location,
+                    map: map,
+                    title: 'Richtige Position für Runde ' + round,
+                    icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
+                });
+            }
+
+            // Marker für die Spieler-Guesses
+            playerGuesses.forEach(guess => {
+                const position = { lat: parseFloat(guess.lat), lng: parseFloat(guess.lng) };
+                const marker = new google.maps.Marker({
+                    position: position,
+                    map: map,
+                    title: guess.spielername,
+                    icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' // Blauer Marker für den Spieler
+                });
+                markers.push(marker);
+            });
+        }
+
+        // Nächste Runde starten
+        function startNextRound() {
+            window.location.href = "game_multiplayer.php?code=" + lobbyCode;
+        }
+
+        // Initialisierung der Karte und die erste Aktualisierung
+        function initMap() {
+            updateResults(); // Erste Aktualisierung der Ergebnisse und Karte
+            setInterval(updateResults, 2000); // Alle 2 Sekunden Ergebnisse aktualisieren
+        }
+
+        nextRoundButton.addEventListener('click', startNextRound);
+
+        window.initMap = initMap;
+    </script>
 
 </body>
 </html>
