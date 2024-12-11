@@ -9,17 +9,11 @@ if (isset($_GET['lobbyCode'])) {
     die("Kein Lobby-Code übergeben.");
 }
 
-// Spieler-ID aus der Session abrufen
-if (!isset($_SESSION['player_id'])) {
-    die("Nicht authentifiziert.");
-}
-$playerId = $_SESSION['player_id'];
-
 // Alle gespeicherten Guesse für die angegebene Lobby abfragen
 $stmt = $conn->prepare(
     "SELECT g.runde, g.spielername, g.lat, g.lng, g.score, p.is_host 
      FROM guesses g
-     JOIN players p ON g.lobby_id = p.lobby_code AND g.spielername = p.name
+     JOIN players p ON g.lobby_id = p.lobby_code
      WHERE g.lobby_id = ? 
      ORDER BY g.runde ASC"
 );
@@ -27,6 +21,7 @@ $stmt->bind_param("s", $lobbyCode);
 $stmt->execute();
 $result = $stmt->get_result();
 
+// Überprüfen, ob es Ergebnisse gibt
 if ($result->num_rows == 0) {
     die("Keine Spielergebnisse gefunden.");
 }
@@ -35,15 +30,34 @@ $guesses = [];
 while ($row = $result->fetch_assoc()) {
     $guesses[] = $row;
 }
+
 $stmt->close();
 
-// Überprüfen, ob der aktuelle Spieler der Host ist
-$stmt = $conn->prepare("SELECT is_host FROM players WHERE id = ?");
-$stmt->bind_param("i", $playerId);
+// Überprüfen, wie viele Runden es gibt
+$stmt = $conn->prepare("SELECT rounds FROM lobbies WHERE code = ?");
+$stmt->bind_param("s", $lobbyCode);
 $stmt->execute();
-$stmt->bind_result($isHost);
+$stmt->bind_result($totalRounds);
 $stmt->fetch();
 $stmt->close();
+
+// Überprüfen, wie viele Spieler ihre Guess bereits abgegeben haben
+$stmt = $conn->prepare("SELECT COUNT(*) FROM guesses WHERE lobby_id = ? AND runde = ?");
+$stmt->bind_param("si", $lobbyCode, $guesses[0]['runde']);
+$stmt->execute();
+$stmt->bind_result($guessesCount);
+$stmt->fetch();
+$stmt->close();
+
+// Überprüfen, wie viele Spieler in der Lobby sind
+$stmt = $conn->prepare("SELECT COUNT(*) FROM players WHERE lobby_code = ?");
+$stmt->bind_param("s", $lobbyCode);
+$stmt->execute();
+$stmt->bind_result($totalPlayers);
+$stmt->fetch();
+$stmt->close();
+
+$allGuessesSubmitted = ($guessesCount == $totalPlayers);
 
 // Abrufen der echten Koordinaten für jede Runde aus der locations-Tabelle
 $locations = [];
@@ -61,10 +75,25 @@ foreach ($guesses as $guess) {
 $response = [
     'guesses' => $guesses,
     'locations' => $locations,
-    'isHost' => $isHost
+    'allGuessesSubmitted' => $allGuessesSubmitted
 ];
 
+// Rückgabe der Daten als JSON
 echo json_encode($response);
+
+// Funktion zur Berechnung der Entfernung zwischen zwei geografischen Punkten (in Kilometern)
+function calculateDistance($lat1, $lon1, $lat2, $lon2) {
+    $R = 6371; // Radius der Erde in km
+    $phi1 = deg2rad($lat1);
+    $phi2 = deg2rad($lat2);
+    $deltaPhi = deg2rad($lat2 - $lat1);
+    $deltaLambda = deg2rad($lon2 - $lon1);
+
+    $a = sin($deltaPhi / 2) * sin($deltaPhi / 2) + cos($phi1) * cos($phi2) * sin($deltaLambda / 2) * sin($deltaLambda / 2);
+    $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
+
+    return $R * $c; // Entfernung in Kilometern
+}
 ?>
 
 <!DOCTYPE html>
@@ -77,9 +106,20 @@ echo json_encode($response);
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         #map {
-            height: 60vh;
-            width: 100%;
+            margin-top: 150px;
+            height: 50vh;
+            width: 70vw;
+            border: 1px solid #ccc;
+            z-index: 100;
+        }
+        table {
             margin-top: 20px;
+            width: 100%;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
         }
     </style>
 </head>
@@ -88,6 +128,7 @@ echo json_encode($response);
 
     <div class="container">
         <div id="map"></div>
+
         <table class="table">
             <thead>
                 <tr>
@@ -99,7 +140,7 @@ echo json_encode($response);
             </thead>
             <tbody>
                 <?php foreach ($guesses as $guess): 
-                    $roundLocation = $locations[$guess['runde']] ?? ['lat' => 51.1657, 'lng' => 10.4515];
+                    $roundLocation = $locations[$guess['runde']] ?? ['lat' => 51.1657, 'lng' => 10.4515]; // Standardkoordinaten wenn keine gefunden
                     $distance = calculateDistance($roundLocation['lat'], $roundLocation['lng'], $guess['lat'], $guess['lng']);
                 ?>
                     <tr>
@@ -118,83 +159,83 @@ echo json_encode($response);
     </div>
 
     <script>
-        let map;
-        let markers = [];
-        let playerGuesses = [];
-        const lobbyCode = "<?php echo $lobbyCode; ?>";
-        const isHost = <?php echo json_encode($isHost); ?>;
-        const nextRoundButton = document.getElementById('next-round-btn');
+    let map;
+    let markers = [];
+    let correctMarker;
+    let playerGuesses = [];
+    const lobbyCode = "<?php echo $lobbyCode; ?>";
+    const locations = <?php echo json_encode($locations); ?>;
+    const nextRoundButton = document.getElementById('next-round-btn');
 
-        // Funktion zur Aktualisierung der Spielergebnisse
-        function updateResults() {
-            fetch('show_score.php?lobbyCode=' + lobbyCode)
-                .then(response => response.json())
-                .then(data => {
-                    playerGuesses = data.guesses;
-                    updateMap(data.locations);
+    // Funktion zur Aktualisierung der Spielergebnisse
+    function updateResults() {
+        fetch('show_score.php?lobbyCode=' + lobbyCode)
+            .then(response => response.json())
+            .then(data => {
+                playerGuesses = data.guesses;
 
-                    // Wenn der Host ist, den Button aktivieren
-                    if (isHost) {
-                        nextRoundButton.disabled = false;
-                    }
-                })
-                .catch(error => console.error('Fehler beim Abrufen der Ergebnisse:', error));
-        }
+                // Aktualisieren der Karte mit den neuen Markern
+                updateMap();
 
-        // Karte aktualisieren
-        function updateMap(locations) {
-            markers.forEach(marker => marker.setMap(null));
-            markers = [];
+                // Wenn alle Spieler ihre Guesses abgegeben haben, Button aktivieren
+                nextRoundButton.disabled = !data.allGuessesSubmitted;
+            })
+            .catch(error => console.error('Fehler beim Abrufen der Ergebnisse:', error));
+    }
 
-            map = new google.maps.Map(document.getElementById('map'), {
-                zoom: 6,
-                center: locations[1] || { lat: 51.1657, lng: 10.4515 }
-            });
+    // Karte aktualisieren
+    function updateMap() {
+        // Entferne bestehende Marker, bevor neue gesetzt werden
+        markers.forEach(marker => marker.setMap(null));
+        markers = [];
 
-            for (let round in locations) {
-                const location = locations[round];
-                const correctMarker = new google.maps.Marker({
-                    position: location,
-                    map: map,
-                    title: 'Richtige Position für Runde ' + round,
-                    icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
-                });
-            }
+        // Initialisiere die Karte
+        map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 12,
+            center: { lat: 48.4108, lng: 15.6012 }, // Krems an der Donau
+        });
 
-            playerGuesses.forEach(guess => {
-                const position = { lat: parseFloat(guess.lat), lng: parseFloat(guess.lng) };
-                const marker = new google.maps.Marker({
-                    position: position,
-                    map: map,
-                    title: guess.spielername,
-                    icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-                });
-                markers.push(marker);
+        // Marker für die richtigen Positionen jeder Runde
+        for (let round in locations) {
+            const location = locations[round];
+            correctMarker = new google.maps.Marker({
+                position: location,
+                map: map,
+                title: 'Richtige Position für Runde ' + round,
+                icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
             });
         }
 
-        // Nächste Runde starten
-        function startNextRound() {
-            fetch('start_next_round.php?lobbyCode=' + lobbyCode)
-                .then(() => {
-                    window.location.href = "game_multiplayer.php?code=" + lobbyCode;
-                })
-                .catch(error => console.error('Fehler beim Start der nächsten Runde:', error));
-        }
+        // Marker für die Spieler-Guesses
+        playerGuesses.forEach(guess => {
+            const position = { lat: parseFloat(guess.lat), lng: parseFloat(guess.lng) };
+            const marker = new google.maps.Marker({
+                position: position,
+                map: map,
+                title: guess.spielername,
+                icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' // Blauer Marker für den Spieler
+            });
+            markers.push(marker);
+        });
+    }
 
-        // Automatische Weiterleitung für Spieler
-        setInterval(() => {
-            fetch('check_round_status.php?lobbyCode=' + lobbyCode)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.nextRoundStarted) {
-                        window.location.href = "game_multiplayer.php?code=" + lobbyCode;
-                    }
-                });
-        }, 2000);
+    // Nächste Runde starten
+    function startNextRound() {
+        window.location.href = "game_multiplayer.php?code=" + lobbyCode;
+    }
 
-        nextRoundButton.addEventListener('click', startNextRound);
-        window.initMap = updateResults;
-    </script>
+    // Initialisierung der Karte und die erste Aktualisierung
+    function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+            zoom: 12,
+            center: { lat: 48.4108, lng: 15.6012 }, // Krems an der Donau
+        });
+        updateResults(); // Erste Aktualisierung der Ergebnisse und Karte
+        setInterval(updateResults, 2000); // Alle 2 Sekunden Ergebnisse aktualisieren
+    }
+
+    nextRoundButton.addEventListener('click', startNextRound);
+</script>
+
 </body>
 </html>
