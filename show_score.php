@@ -9,11 +9,17 @@ if (isset($_GET['lobbyCode'])) {
     die("Kein Lobby-Code übergeben.");
 }
 
+// Spieler-ID aus der Session abrufen
+if (!isset($_SESSION['player_id'])) {
+    die("Nicht authentifiziert.");
+}
+$playerId = $_SESSION['player_id'];
+
 // Alle gespeicherten Guesse für die angegebene Lobby abfragen
 $stmt = $conn->prepare(
     "SELECT g.runde, g.spielername, g.lat, g.lng, g.score, p.is_host 
      FROM guesses g
-     JOIN players p ON g.lobby_id = p.lobby_code
+     JOIN players p ON g.lobby_id = p.lobby_code AND g.spielername = p.name
      WHERE g.lobby_id = ? 
      ORDER BY g.runde ASC"
 );
@@ -21,7 +27,6 @@ $stmt->bind_param("s", $lobbyCode);
 $stmt->execute();
 $result = $stmt->get_result();
 
-// Überprüfen, ob es Ergebnisse gibt
 if ($result->num_rows == 0) {
     die("Keine Spielergebnisse gefunden.");
 }
@@ -30,34 +35,15 @@ $guesses = [];
 while ($row = $result->fetch_assoc()) {
     $guesses[] = $row;
 }
-
 $stmt->close();
 
-// Überprüfen, wie viele Runden es gibt
-$stmt = $conn->prepare("SELECT rounds FROM lobbies WHERE code = ?");
-$stmt->bind_param("s", $lobbyCode);
+// Überprüfen, ob der aktuelle Spieler der Host ist
+$stmt = $conn->prepare("SELECT is_host FROM players WHERE id = ?");
+$stmt->bind_param("i", $playerId);
 $stmt->execute();
-$stmt->bind_result($totalRounds);
+$stmt->bind_result($isHost);
 $stmt->fetch();
 $stmt->close();
-
-// Überprüfen, wie viele Spieler ihre Guess bereits abgegeben haben
-$stmt = $conn->prepare("SELECT COUNT(*) FROM guesses WHERE lobby_id = ? AND runde = ?");
-$stmt->bind_param("si", $lobbyCode, $guesses[0]['runde']);
-$stmt->execute();
-$stmt->bind_result($guessesCount);
-$stmt->fetch();
-$stmt->close();
-
-// Überprüfen, wie viele Spieler in der Lobby sind
-$stmt = $conn->prepare("SELECT COUNT(*) FROM players WHERE lobby_code = ?");
-$stmt->bind_param("s", $lobbyCode);
-$stmt->execute();
-$stmt->bind_result($totalPlayers);
-$stmt->fetch();
-$stmt->close();
-
-$allGuessesSubmitted = ($guessesCount == $totalPlayers);
 
 // Abrufen der echten Koordinaten für jede Runde aus der locations-Tabelle
 $locations = [];
@@ -75,25 +61,10 @@ foreach ($guesses as $guess) {
 $response = [
     'guesses' => $guesses,
     'locations' => $locations,
-    'allGuessesSubmitted' => $allGuessesSubmitted
+    'isHost' => $isHost
 ];
 
-// Rückgabe der Daten als JSON
 echo json_encode($response);
-
-// Funktion zur Berechnung der Entfernung zwischen zwei geografischen Punkten (in Kilometern)
-function calculateDistance($lat1, $lon1, $lat2, $lon2) {
-    $R = 6371; // Radius der Erde in km
-    $phi1 = deg2rad($lat1);
-    $phi2 = deg2rad($lat2);
-    $deltaPhi = deg2rad($lat2 - $lat1);
-    $deltaLambda = deg2rad($lon2 - $lon1);
-
-    $a = sin($deltaPhi / 2) * sin($deltaPhi / 2) + cos($phi1) * cos($phi2) * sin($deltaLambda / 2) * sin($deltaLambda / 2);
-    $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-    return $R * $c; // Entfernung in Kilometern
-}
 ?>
 
 <!DOCTYPE html>
@@ -110,15 +81,6 @@ function calculateDistance($lat1, $lon1, $lat2, $lon2) {
             width: 100%;
             margin-top: 20px;
         }
-        table {
-            margin-top: 20px;
-            width: 100%;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-            border-bottom: 1px solid #ddd;
-        }
     </style>
 </head>
 <body>
@@ -126,7 +88,6 @@ function calculateDistance($lat1, $lon1, $lat2, $lon2) {
 
     <div class="container">
         <div id="map"></div>
-
         <table class="table">
             <thead>
                 <tr>
@@ -138,7 +99,7 @@ function calculateDistance($lat1, $lon1, $lat2, $lon2) {
             </thead>
             <tbody>
                 <?php foreach ($guesses as $guess): 
-                    $roundLocation = $locations[$guess['runde']] ?? ['lat' => 51.1657, 'lng' => 10.4515]; // Standardkoordinaten wenn keine gefunden
+                    $roundLocation = $locations[$guess['runde']] ?? ['lat' => 51.1657, 'lng' => 10.4515];
                     $distance = calculateDistance($roundLocation['lat'], $roundLocation['lng'], $guess['lat'], $guess['lng']);
                 ?>
                     <tr>
@@ -159,10 +120,9 @@ function calculateDistance($lat1, $lon1, $lat2, $lon2) {
     <script>
         let map;
         let markers = [];
-        let correctMarker;
         let playerGuesses = [];
         const lobbyCode = "<?php echo $lobbyCode; ?>";
-        const locations = <?php echo json_encode($locations); ?>;
+        const isHost = <?php echo json_encode($isHost); ?>;
         const nextRoundButton = document.getElementById('next-round-btn');
 
         // Funktion zur Aktualisierung der Spielergebnisse
@@ -171,32 +131,29 @@ function calculateDistance($lat1, $lon1, $lat2, $lon2) {
                 .then(response => response.json())
                 .then(data => {
                     playerGuesses = data.guesses;
+                    updateMap(data.locations);
 
-                    // Aktualisieren der Karte mit den neuen Markern
-                    updateMap();
-
-                    // Wenn alle Spieler ihre Guess abgegeben haben, Button aktivieren
-                    nextRoundButton.disabled = !data.allGuessesSubmitted;
+                    // Wenn der Host ist, den Button aktivieren
+                    if (isHost) {
+                        nextRoundButton.disabled = false;
+                    }
                 })
                 .catch(error => console.error('Fehler beim Abrufen der Ergebnisse:', error));
         }
 
         // Karte aktualisieren
-        function updateMap() {
-            // Entferne bestehende Marker, bevor neue gesetzt werden
+        function updateMap(locations) {
             markers.forEach(marker => marker.setMap(null));
             markers = [];
 
-            // Initialisiere die Karte
             map = new google.maps.Map(document.getElementById('map'), {
                 zoom: 6,
-                center: locations[1] || { lat: 51.1657, lng: 10.4515 } // Wenn keine Koordinaten, dann Standardkoordinaten
+                center: locations[1] || { lat: 51.1657, lng: 10.4515 }
             });
 
-            // Marker für jede Runde
             for (let round in locations) {
                 const location = locations[round];
-                correctMarker = new google.maps.Marker({
+                const correctMarker = new google.maps.Marker({
                     position: location,
                     map: map,
                     title: 'Richtige Position für Runde ' + round,
@@ -204,14 +161,13 @@ function calculateDistance($lat1, $lon1, $lat2, $lon2) {
                 });
             }
 
-            // Marker für die Spieler-Guesses
             playerGuesses.forEach(guess => {
                 const position = { lat: parseFloat(guess.lat), lng: parseFloat(guess.lng) };
                 const marker = new google.maps.Marker({
                     position: position,
                     map: map,
                     title: guess.spielername,
-                    icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' // Blauer Marker für den Spieler
+                    icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
                 });
                 markers.push(marker);
             });
@@ -219,19 +175,26 @@ function calculateDistance($lat1, $lon1, $lat2, $lon2) {
 
         // Nächste Runde starten
         function startNextRound() {
-            window.location.href = "game_multiplayer.php?code=" + lobbyCode;
+            fetch('start_next_round.php?lobbyCode=' + lobbyCode)
+                .then(() => {
+                    window.location.href = "game_multiplayer.php?code=" + lobbyCode;
+                })
+                .catch(error => console.error('Fehler beim Start der nächsten Runde:', error));
         }
 
-        // Initialisierung der Karte und die erste Aktualisierung
-        function initMap() {
-            updateResults(); // Erste Aktualisierung der Ergebnisse und Karte
-            setInterval(updateResults, 2000); // Alle 2 Sekunden Ergebnisse aktualisieren
-        }
+        // Automatische Weiterleitung für Spieler
+        setInterval(() => {
+            fetch('check_round_status.php?lobbyCode=' + lobbyCode)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.nextRoundStarted) {
+                        window.location.href = "game_multiplayer.php?code=" + lobbyCode;
+                    }
+                });
+        }, 2000);
 
         nextRoundButton.addEventListener('click', startNextRound);
-
-        window.initMap = initMap;
+        window.initMap = updateResults;
     </script>
-
 </body>
 </html>
