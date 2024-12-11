@@ -76,37 +76,43 @@ $stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="de">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Multiplayer-Spiel</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCQnFQURsReLCE66o_kF2oNvgFMDkHyO6E&callback=initMap&libraries=maps,marker&v=beta" async defer></script>
+    <script
+        src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCQnFQURsReLCE66o_kF2oNvgFMDkHyO6E&callback=initMap&libraries=maps,marker&v=beta"
+        async defer></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="stylemain.css">
     <style>
-        #street-view {
-            width: 100%;
-            height: 100vh;
-        }
-        #map {
-            height: 30vh;
-            width: 30vw;
-            position: absolute;
-            bottom: 50px;
-            right: 20px;
-            border: 1px solid #ccc;
-            z-index: 100;
-        }
-        #submit-btn {
-            position: absolute;
-            width: 30vw;
-            bottom: 10px;
-            z-index: 101;
-            right: 20px;
-        }
+    #street-view {
+        width: 100%;
+        height: 100vh;
+    }
+
+    #map {
+        height: 30vh;
+        width: 30vw;
+        position: absolute;
+        bottom: 50px;
+        right: 20px;
+        border: 1px solid #ccc;
+        z-index: 100;
+    }
+
+    #submit-btn {
+        position: absolute;
+        width: 30vw;
+        bottom: 10px;
+        z-index: 101;
+        right: 20px;
+    }
     </style>
 </head>
+
 <body>
     <?php require 'navbar.php'; ?>
 
@@ -115,84 +121,87 @@ $stmt->close();
     <button id="submit-btn" class="btn btn-primary">Absenden</button>
 
     <script>
-        let smallMap;
-        let smallMapMarker;
-        let markerPosition;
-        let currentLocationIndex = 0;
-        let locations = <?php echo json_encode($locations); ?>;
-        const lobbyCode = "<?php echo $lobbyCode; ?>";
-        const playerName = "<?php echo $_SESSION['user_name'] ?? 'Unbekannt'; ?>";
+    let smallMap;
+    let smallMapMarker;
+    let markerPosition;
+    let currentLocationIndex = 0;
+    let locations = <?php echo json_encode($locations); ?>;
+    const lobbyCode = "<?php echo $lobbyCode; ?>";
+    const playerName = "<?php echo $_SESSION['user_name'] ?? 'Unbekannt'; ?>";
 
-        function calculateDistance(lat1, lon1, lat2, lon2) {
-            const R = 6371; // Radius der Erde in km
-            const φ1 = lat1 * Math.PI / 180;
-            const φ2 = lat2 * Math.PI / 180;
-            const Δφ = (lat2 - lat1) * Math.PI / 180;
-            const Δλ = (lon2 - lon1) * Math.PI / 180;
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371; // Radius der Erde in km
+        const φ1 = lat1 * Math.PI / 180;
+        const φ2 = lat2 * Math.PI / 180;
+        const Δφ = (lat2 - lat1) * Math.PI / 180;
+        const Δλ = (lon2 - lon1) * Math.PI / 180;
 
-            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-                      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-            return R * c * 1000; // Entfernung in Metern
+        return R * c * 1000; // Entfernung in Metern
+    }
+
+    function calculatePoints(distance) {
+        if (distance <= 5) {
+            return 5000;
+        } else if (distance >= 1000) {
+            return 0;
+        } else {
+            return Math.round(5000 * (1 - (distance - 5) / (1000 - 5)));
         }
+    }
 
-        function calculatePoints(distance) {
-            if (distance <= 5) {
-                return 5000;
-            } else if (distance >= 1000) {
-                return 0;
-            } else {
-                return Math.round(5000 * (1 - (distance - 5) / (1000 - 5)));
-            }
-        }
+    function initMap() {
+        const randomLocation = {
+            lat: parseFloat(locations[currentLocationIndex].latitude),
+            lng: parseFloat(locations[currentLocationIndex].longitude)
+        };
 
-        function initMap() {
-            const randomLocation = {
-                lat: parseFloat(locations[currentLocationIndex].latitude),
-                lng: parseFloat(locations[currentLocationIndex].longitude)
-            };
+        const panorama = new google.maps.StreetViewPanorama(document.getElementById("street-view"), {
+            position: randomLocation,
+            disableDefaultUI: true
+        });
 
-            const panorama = new google.maps.StreetViewPanorama(document.getElementById("street-view"), {
-                position: randomLocation,
-                disableDefaultUI: true
-            });
+        smallMap = new google.maps.Map(document.getElementById("map"), {
+            center: {
+                lat: 48.4100,
+                lng: 15.6100
+            },
+            zoom: 12,
+            mapTypeId: google.maps.MapTypeId.ROADMAP,
+            disableDefaultUI: true
+        });
 
-            smallMap = new google.maps.Map(document.getElementById("map"), {
-                center: randomLocation,
-                zoom: 12,
-                mapTypeId: google.maps.MapTypeId.ROADMAP,
-                disableDefaultUI: true
-            });
+        smallMapMarker = new google.maps.Marker({
+            position: randomLocation,
+            map: smallMap,
+            visible: false
+        });
 
-            smallMapMarker = new google.maps.Marker({
-                position: randomLocation,
-                map: smallMap,
-                visible: false
-            });
+        smallMap.addListener("click", (event) => {
+            markerPosition = event.latLng;
+            smallMapMarker.setPosition(markerPosition);
+            smallMapMarker.setVisible(true);
+        });
+    }
 
-            smallMap.addListener("click", (event) => {
-                markerPosition = event.latLng;
-                smallMapMarker.setPosition(markerPosition);
-                smallMapMarker.setVisible(true);
-            });
-        }
+    document.getElementById('submit-btn').addEventListener('click', () => {
+        if (markerPosition) {
+            const submitButton = document.getElementById('submit-btn');
+            submitButton.disabled = true; // Deaktiviert den Button, um mehrfaches Absenden zu verhindern
 
-        document.getElementById('submit-btn').addEventListener('click', () => {
-            if (markerPosition) {
-                const submitButton = document.getElementById('submit-btn');
-                submitButton.disabled = true; // Deaktiviert den Button, um mehrfaches Absenden zu verhindern
+            const distance = calculateDistance(
+                parseFloat(locations[currentLocationIndex].latitude),
+                parseFloat(locations[currentLocationIndex].longitude),
+                markerPosition.lat(),
+                markerPosition.lng()
+            );
 
-                const distance = calculateDistance(
-                    parseFloat(locations[currentLocationIndex].latitude),
-                    parseFloat(locations[currentLocationIndex].longitude),
-                    markerPosition.lat(),
-                    markerPosition.lng()
-                );
+            const score = calculatePoints(distance);
 
-                const score = calculatePoints(distance);
-
-                fetch(window.location.href, {
+            fetch(window.location.href, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -206,21 +215,22 @@ $stmt->close();
                         score: score
                     })
                 }).then(response => response.json())
-                  .then(data => {
-                      if (data.success) {
-                          // Weiterleitung nach jeder Runde zu show_score.php
-                          window.location.href = `show_score.php?lobbyCode=${lobbyCode}`;
-                      } else {
-                          alert('Fehler beim Absenden der Daten: ' + (data.error || 'Unbekannter Fehler.'));
-                      }
-                      submitButton.disabled = false; // Button nach Abschluss wieder aktivieren
-                  });
-            } else {
-                alert("Bitte setzen Sie zuerst einen Marker auf der Karte!");
-            }
-        });
+                .then(data => {
+                    if (data.success) {
+                        // Weiterleitung zur Warte-Seite
+                        window.location.href = `waiting_room.php?lobbyCode=${lobbyCode}`;
+                    } else {
+                        alert('Fehler beim Absenden der Daten: ' + (data.error || 'Unbekannter Fehler.'));
+                    }
+                    submitButton.disabled = false; // Button nach Abschluss wieder aktivieren
+                });
+        } else {
+            alert("Bitte setzen Sie zuerst einen Marker auf der Karte!");
+        }
+    });
 
-        window.initMap = initMap;
+    window.initMap = initMap;
     </script>
 </body>
+
 </html>
