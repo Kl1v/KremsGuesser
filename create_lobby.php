@@ -25,10 +25,14 @@ function getRandomLocationInKrems()
 // Funktion zur Validierung, ob Street View für eine Position verfügbar ist
 function isStreetViewAvailable($lat, $lng)
 {
-    $apiKey = "AIzaSyCEtD-b25DbDtWDqwJGcVFpJhzKiYU9rjk"; // Ersetze mit deinem API-Schlüssel
+    $apiKey = "AIzaSyCQnFQURsReLCE66o_kF2oNvgFMDkHyO6E";
     $url = "https://maps.googleapis.com/maps/api/streetview/metadata?location=$lat,$lng&key=$apiKey";
 
-    $response = file_get_contents($url);
+    $context = stream_context_create([
+        'https' => ['timeout' => 5] // Timeout auf 5 Sekunden setzen
+    ]);
+
+    $response = @file_get_contents($url, false, $context);
     if ($response === false) {
         return false;
     }
