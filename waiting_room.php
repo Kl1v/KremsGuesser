@@ -17,21 +17,23 @@ $lobbyCode = $_GET['lobbyCode'];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Warten auf andere Spieler...</title>
     <script>
-    const lobbyCode = "<?php echo $lobbyCode; ?>";
+        const lobbyCode = "<?php echo $lobbyCode; ?>";
 
-    function checkStatus() {
-        fetch(`check_status.php?lobbyCode=${lobbyCode}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.allGuessesSubmitted || data.timeExpired) {
-                    window.location.href = `show_score.php?lobbyCode=${lobbyCode}`;
-                }
-            })
-            .catch(error => console.error('Fehler beim Abrufen des Status:', error));
-    }
+        function checkStatus() {
+            fetch(`check_status.php?lobbyCode=${lobbyCode}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Status erhalten:", data);
 
-    // Status alle 3 Sekunden prüfen
-    setInterval(checkStatus, 3000);
+                    if (data.allGuessesSubmitted || data.timeExpired) {
+                        window.location.href = `show_score.php?lobbyCode=${lobbyCode}`;
+                    }
+                })
+                .catch(error => console.error('Fehler beim Abrufen des Status:', error));
+        }
+
+        // Status alle 3 Sekunden prüfen
+        setInterval(checkStatus, 3000);
     </script>
 </head>
 

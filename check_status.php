@@ -8,7 +8,7 @@ if (!isset($_GET['lobbyCode'])) {
 
 $lobbyCode = $_GET['lobbyCode'];
 
-// 1. Hole die Anzahl der Spieler in der Lobby
+// 1. Anzahl der Spieler in der Lobby abrufen
 $playerCountQuery = $conn->prepare("
     SELECT COUNT(*) as player_count
     FROM players
@@ -19,7 +19,7 @@ $playerCountQuery->execute();
 $result = $playerCountQuery->get_result();
 $playerCount = $result->fetch_assoc()['player_count'];
 
-// 2. Hole die aktuelle Runde der Lobby
+// 2. Aktuelle Runde der Lobby abrufen
 $currentRoundQuery = $conn->prepare("
     SELECT rounds
     FROM lobbies
@@ -30,7 +30,7 @@ $currentRoundQuery->execute();
 $result = $currentRoundQuery->get_result();
 $currentRound = $result->fetch_assoc()['rounds'];
 
-// 3. Prüfe, ob alle Spieler ihre Guesses abgegeben haben
+// 3. Abgegebene Guesses in der aktuellen Runde prüfen
 $guessesQuery = $conn->prepare("
     SELECT COUNT(*) as guess_count
     FROM guesses
@@ -41,7 +41,7 @@ $guessesQuery->execute();
 $result = $guessesQuery->get_result();
 $guessCount = $result->fetch_assoc()['guess_count'];
 
-// 4. Prüfe, ob die Zeit abgelaufen ist
+// 4. Zeitlimit prüfen
 $timeCheckQuery = $conn->prepare("
     SELECT is_game_started, time_limit, TIMESTAMPDIFF(SECOND, created_at, NOW()) as elapsed_time
     FROM lobbies
@@ -58,10 +58,16 @@ $elapsedTime = $timeData['elapsed_time'];
 
 $timeExpired = $elapsedTime >= $timeLimit;
 
-// 5. Rückgabe der Statusinformationen
+// 5. Bedingung für Weiterleitung zurückgeben
 $response = [
     'allGuessesSubmitted' => $guessCount >= $playerCount,
     'timeExpired' => $timeExpired,
+    'debug' => [
+        'playerCount' => $playerCount,
+        'guessCount' => $guessCount,
+        'elapsedTime' => $elapsedTime,
+        'timeLimit' => $timeLimit,
+    ]
 ];
 echo json_encode($response);
 ?>
