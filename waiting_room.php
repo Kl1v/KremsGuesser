@@ -23,17 +23,17 @@ $lobbyCode = $_GET['lobbyCode'];
             fetch(`check_status.php?lobbyCode=${lobbyCode}`)
                 .then(response => response.json())
                 .then(data => {
-                    console.log("Status erhalten:", data);
-
                     if (data.allGuessesSubmitted || data.timeExpired) {
                         window.location.href = `show_score.php?lobbyCode=${lobbyCode}`;
+                    } else {
+                        console.log("Warten auf Spieler:", data.debug);
                     }
                 })
                 .catch(error => console.error('Fehler beim Abrufen des Status:', error));
         }
 
-        // Status alle 3 Sekunden prüfen
-        setInterval(checkStatus, 3000);
+        // Status jede Sekunde prüfen
+        setInterval(checkStatus, 1000);
     </script>
 </head>
 
