@@ -8,7 +8,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = trim($_POST['password']);
 
     // Benutzer anhand der E-Mail suchen
-    $stmt = $conn->prepare("SELECT id, username, password FROM login WHERE email = ?");
+    $stmt = $conn->prepare("SELECT id, username, password FROM login WHERE email = ? AND is_admin = 1");
     $stmt->bind_param("s", $email);
     $stmt->execute();
     $result = $stmt->get_result();
