@@ -1,7 +1,67 @@
 <?php
-session_start();
-// Status aus der URL abfragen
-$status = isset($_GET['status']) ? $_GET['status'] : '';
+// Verbindung zur Datenbank einbinden
+require 'connection.php';
+
+// Überprüfung, ob das Formular abgesendet wurde
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Eingabewerte erfassen und bereinigen
+    $name = mysqli_real_escape_string($conn, trim($_POST['name']));
+    $email = mysqli_real_escape_string($conn, trim($_POST['email']));
+    $password = $_POST['password'];
+    $confirmPassword = $_POST['confirmPassword'];
+
+    $errorMessage = '';
+
+    // Validierung
+    if (empty($name) || empty($email) || empty($password) || empty($confirmPassword)) {
+        $errorMessage = "Alle Felder müssen ausgefüllt werden.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $errorMessage = "Ungültige E-Mail-Adresse.";
+    } elseif ($password !== $confirmPassword) {
+        $errorMessage = "Die Passwörter stimmen nicht überein.";
+    } else {
+        // Prüfen, ob die E-Mail-Adresse oder der Benutzername bereits registriert ist
+        $sql_check_email = "SELECT id FROM login WHERE Email = ?";
+        $stmt = $conn->prepare($sql_check_email);
+        $stmt->bind_param("s", $email);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows > 0) {
+            $errorMessage = "Diese E-Mail-Adresse ist bereits registriert.";
+        } else {
+            $sql_check_name = "SELECT id FROM login WHERE username = ?";
+            $stmt = $conn->prepare($sql_check_name);
+            $stmt->bind_param("s", $name);
+            $stmt->execute();
+            $result = $stmt->get_result();
+
+            if ($result->num_rows > 0) {
+                $errorMessage = "Der Name ist bereits registriert.";
+            }
+        }
+    }
+
+    // Wenn keine Fehler vorliegen, Benutzer registrieren
+    if (empty($errorMessage)) {
+        $passwordHash = password_hash($password, PASSWORD_BCRYPT);
+
+        $sql_insert = "INSERT INTO login (username, email, password, created_at) VALUES (?, ?, ?, NOW())";
+        $stmt = $conn->prepare($sql_insert);
+        $stmt->bind_param("sss", $name, $email, $passwordHash);
+
+        if ($stmt->execute()) {
+            header("Location: register.php?status=success");
+            exit();
+        } else {
+            $errorMessage = "Es gab einen Fehler bei der Registrierung. Bitte versuche es erneut.";
+        }
+    }
+
+    // Verbindung schließen
+    $stmt->close();
+    $conn->close();
+}
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -76,21 +136,13 @@ $status = isset($_GET['status']) ? $_GET['status'] : '';
 
     .error-message {
         color: red;
-        font-size: 14px;
-        margin-top: -10px;
-        margin-bottom: 10px;
-        display: none;
-    }
-
-    .success-message {
-        color: green;
         font-size: 16px;
         text-align: center;
         margin-bottom: 20px;
     }
 
-    .error-message-server {
-        color: red;
+    .success-message {
+        color: green;
         font-size: 16px;
         text-align: center;
         margin-bottom: 20px;
@@ -112,14 +164,19 @@ $status = isset($_GET['status']) ? $_GET['status'] : '';
             <h1>REGISTRIEREN</h1>
             <h4>ERSTELLE EINEN ACCOUNT</h4>
 
-            <!-- Statusmeldungen -->
-            <?php if ($status === 'success'): ?>
-            <p class="success-message">Registrierung erfolgreich!</p>
-            <?php elseif ($status === 'error'): ?>
-            <p class="error-message-server">Es gab einen Fehler bei der Registrierung. Bitte versuche es erneut.</p>
+            <!-- Fehlermeldung anzeigen -->
+            <?php if (!empty($errorMessage)): ?>
+            <div class="error-message">
+                <?php echo htmlspecialchars($errorMessage); ?>
+            </div>
             <?php endif; ?>
 
-            <form action="process_register.php" method="POST" id="registerForm">
+            <!-- Statusmeldungen -->
+            <?php if (isset($_GET['status']) && $_GET['status'] === 'success'): ?>
+            <p class="success-message">Registrierung erfolgreich!</p>
+            <?php endif; ?>
+
+            <form action="register.php" method="POST" id="registerForm">
                 <div class="mb-3">
                     <input type="text" name="name" class="form-control" placeholder="Name" required>
                 </div>
@@ -136,7 +193,6 @@ $status = isset($_GET['status']) ? $_GET['status'] : '';
                         placeholder="Passwort wiederholen" required>
                     <span class="password-toggle" onclick="togglePassword('confirmPassword')">👁️</span>
                 </div>
-                <p class="error-message" id="errorMessage">Die Passwörter stimmen nicht überein.</p>
                 <button type="submit" class="btn btn-warning">Registrieren</button>
             </form>
         </div>
