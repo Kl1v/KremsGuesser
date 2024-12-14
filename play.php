@@ -1,5 +1,10 @@
 <?php
 session_start();
+if (!isset($_SESSION['user_name'])) {
+    // Benutzer ist nicht angemeldet, leitet auf die Login-Seite weiter
+    header('Location: login.php');
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -23,7 +28,7 @@ session_start();
             <h1>Modi Wählen</h1>
             <h4>Allein üben oder Freunde herausfordern?</h4>
             <div class="d-flex flex-column align-items-center gap-3">
-            <a href="singleplayer.php"><button type="submit" class="btn-custom">Singleplayer</button></a>
+                <a href="singleplayer.php"><button type="submit" class="btn-custom">Singleplayer</button></a>
                 <form action="Multiplayer.php" method="get">
                     <button type="submit" class="btn-custom">Multiplayer</button>
                 </form>
