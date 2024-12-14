@@ -1,7 +1,11 @@
 <?php
 session_start();
 require 'connection.php'; // Verbindung zur Datenbank
-
+if (!isset($_SESSION['user_name'])) {
+    // Benutzer ist nicht angemeldet, leitet auf die Login-Seite weiter
+    header('Location: index.php');
+    exit;
+}
 // Wenn das Formular abgeschickt wurde
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $lobbyCode = $_POST['lobbyCode'];
@@ -68,14 +72,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="code-container mb-4">
                     <h1 class="mb-3">Code</h1>
                     <div class="lobby-code-container">
-                        <input 
-                            type="number" 
-                            name="lobbyCode" 
-                            placeholder="X X X X" 
-                            maxlength="4" 
-                            class="lobby-code-input" 
-                            required 
-                            oninput="this.value=this.value.slice(0,4)">
+                        <input type="number" name="lobbyCode" placeholder="X X X X" maxlength="4"
+                            class="lobby-code-input" required oninput="this.value=this.value.slice(0,4)">
                     </div>
                 </div>
                 <div class="d-flex flex-column align-items-center gap-3">
@@ -83,9 +81,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </form>
             <?php if (isset($error)): ?>
-                <div class="alert alert-danger text-center">
-                    <?php echo htmlspecialchars($error); ?>
-                </div>
+            <div class="alert alert-danger text-center">
+                <?php echo htmlspecialchars($error); ?>
+            </div>
             <?php endif; ?>
         </div>
     </div>

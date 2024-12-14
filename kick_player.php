@@ -1,6 +1,10 @@
 <?php
 require 'connection.php'; // Verbindung zur Datenbank
-
+if (!isset($_SESSION['user_name'])) {
+    // Benutzer ist nicht angemeldet, leitet auf die Login-Seite weiter
+    header('Location: index.php');
+    exit;
+}
 // Eingabedaten empfangen
 $data = json_decode(file_get_contents('php://input'), true);
 $playerId = $data['playerId'];

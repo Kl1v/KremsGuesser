@@ -1,5 +1,10 @@
 <?php
 session_start();
+if (!isset($_SESSION['user_name'])) {
+    // Benutzer ist nicht angemeldet, leitet auf die Login-Seite weiter
+    header('Location: index.php');
+    exit;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">

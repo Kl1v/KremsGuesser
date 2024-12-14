@@ -3,11 +3,11 @@ require 'connection.php'; // Verbindung zur Datenbank
 require 'functions.php'; // Gemeinsame Funktionen
 session_start(); // Session starten
 
-// Überprüfen, ob der Benutzername in der Session gesetzt ist
-if (!isset($_SESSION['user_name']) || empty($_SESSION['user_name'])) {
-    die('Benutzername ist nicht gesetzt. Bitte melde dich an.');
+if (!isset($_SESSION['user_name'])) {
+    // Benutzer ist nicht angemeldet, leitet auf die Login-Seite weiter
+    header('Location: index.php');
+    exit;
 }
-
 // Funktion zur Generierung zufälliger Koordinaten in Krems
 function getRandomLocationInKrems()
 {
@@ -133,7 +133,7 @@ $lobbyCode = generateUniqueLobbyCode($conn);
         <div class="play-container">
             <h1 class="text-center">Lobby Erstellen</h1>
             <?php if (isset($errorMessage)) : ?>
-                <div class="alert alert-danger"><?php echo $errorMessage; ?></div>
+            <div class="alert alert-danger"><?php echo $errorMessage; ?></div>
             <?php endif; ?>
 
             <form method="POST">

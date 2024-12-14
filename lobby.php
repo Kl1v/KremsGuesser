@@ -2,7 +2,11 @@
 require 'connection.php'; // Verbindung zur Datenbank
 require 'functions.php'; // Gemeinsame Funktionen
 session_start(); // Session starten
-
+if (!isset($_SESSION['user_name'])) {
+    // Benutzer ist nicht angemeldet, leitet auf die Login-Seite weiter
+    header('Location: index.php');
+    exit;
+}
 // Lobby-Code generieren
 $lobbyCode = generateUniqueLobbyCode($conn);
 ?>
