@@ -33,6 +33,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($result->num_rows > 0) {
         die("Diese E-Mail-Adresse ist bereits registriert.");
     }
+    $sql_check_name = "SELECT id FROM login WHERE username = ?";
+    $stmt = $conn->prepare($sql_check_name);
+    $stmt->bind_param("s", $name);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        die("Der Name ist bereits registriert.");
+    }
 
     // Passwort hashen
     $passwordHash = password_hash($password, PASSWORD_BCRYPT);
