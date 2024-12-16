@@ -31,7 +31,17 @@ require 'connection.php'; // Datenbankverbindung einbinden
         }
 
         
+        .card-title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #ffffff !important;
+}
 
+.card-text {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #ffffff;
+}
 
 
         .card {
@@ -39,6 +49,7 @@ require 'connection.php'; // Datenbankverbindung einbinden
     border-radius: 30px;
     box-shadow: none; /* Entfernt den Hintergrundschimmer komplett */
     background-color: transparent;
+    
     }
 
     .card:hover {
@@ -48,10 +59,20 @@ require 'connection.php'; // Datenbankverbindung einbinden
     }
 
     .card-body {
+        color: #FFD700;
         background-color: #2e003e;
         border-radius: 10px;
 }
 
+.card-up{
+    
+    text-align:center;
+}
+
+
+.globe{
+    margin:30;
+}
 
 
 
@@ -74,28 +95,34 @@ require 'connection.php'; // Datenbankverbindung einbinden
                 <div class="row justify-content-center">
                     <div class="col-12 col-md-4 mb-4">
                         <div class="card">
-                            <div class="card-body">
+                            <div class="card-body card-up">
                                 <h5 class="card-title">Karte 1</h5>
-                                <p class="card-text">Entdecke den ersten Teil von Krems.</p>
+                                <p class="card-text">Entdecke den ungesehene Teile von Krems.</p>
                             </div>
                         </div>
                     </div>
                     <div class="col-12 col-md-4 mb-4">
                         <div class="card">
-                            <div class="card-body">
+                            <div class="card-body card-up">
                                 <h5 class="card-title">Karte 2</h5>
-                                <p class="card-text">Spiele weitere Herausforderungen.</p>
+                                <p class="card-text">Spiele Herausforderungen mit Freunden.</p>
                             </div>
                         </div>
                     </div>
                     <div class="col-12 col-md-4 mb-4">
                         <div class="card">
-                            <div class="card-body">
+                            <div class="card-body card-up">
                                 <h5 class="card-title">Karte 3</h5>
-                                <p class="card-text">Teste dein Wissen über Krems.</p>
+                                <p class="card-text">Teste deinen Orientierungssinn in Krems.</p>
                             </div>
                         </div>
                     </div>
+                </div>
+
+
+
+                <div class="globe">
+                <img src="GlobeKrems.png" alt="Krems Globe" width="200"/>
                 </div>
                 
                 <div class="card LoginRegisterCard">
@@ -103,15 +130,15 @@ require 'connection.php'; // Datenbankverbindung einbinden
                         <h5 class="card-title">Wie KremsGuesser funktioniert</h5>
                         <ul class="card-text">
                             <li>Du spawnst an einem zufälligen Ort in Krems.</li>
-                            <li>Du musst den Standort anhand der Umgebung und Hinweise erkennen.</li>
+                            <li>Du musst den Standort anhand der Umgebung und Hinweisen erkennen.</li>
                             <li>Die Herausforderung ist, die genaue Position auf einer Karte zu finden.</li>
-                            <li>Je genauer du bist, desto mehr Punkte erhältst du.</li>
+                            <li>Je genauer du schätzt, desto mehr Punkte erhältst du!</li>
                         </ul>
                     </div>
                 </div>
             </div>
     
-            <!-- Rechte Spalte mit Farbverlauf -->
+            
             <div class="col-12 col-md-3 gradient-right"></div>
         </div>
     </div>
