@@ -56,9 +56,9 @@ session_start();
             <h1>Modus wählen</h1>
             <h4>Allein spielen oder Freunde herausfordern?</h4>
             <div class="d-flex flex-column align-items-center gap-3">
-                <a href="singleplayer.php"><button type="button" class="btn-custom raise">Singleplayer</button></a>
+                <a href="singleplayer.php"><button type="button" class="btn-custom raise">Einzelspieler</button></a>
                 <form action="Multiplayer.php" method="get">
-                    <button type="submit" class="btn-custom raise">Multiplayer</button>
+                    <button type="submit" class="btn-custom raise">Mehrspieler</button>
                 </form>
             </div>
         </div>

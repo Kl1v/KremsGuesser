@@ -3,10 +3,55 @@ session_start();
 require 'connection.php';
 
 // Lobby-Code aus der URL abrufen
+if (isset($_GET['runde'])) {
+    $runde = intval($_GET['runde']);
+} else {
+    $runde = intval(1);
+}
+
 if (isset($_GET['code'])) {
     $lobbyCode = $_GET['code'];
 } else {
     die("Kein Lobby-Code übergeben.");
+}
+
+// Alle Locations für die angegebene Lobby in Reihenfolge der Runden abrufen
+$stmt = $conn->prepare("SELECT latitude, longitude, round FROM locations WHERE lobby_code = ? ORDER BY round ASC");
+$stmt->bind_param("s", $lobbyCode);
+$stmt->execute();
+$result = $stmt->get_result();
+
+// Überprüfen, ob es Locations gibt
+if ($result->num_rows == 0) {
+    die("Keine Positionen gefunden. Das Spiel wurde möglicherweise nicht korrekt gestartet.");
+}
+
+$locations = [];
+while ($row = $result->fetch_assoc()) {
+    $locations[] = $row;
+}
+$stmt->close();
+
+// Prüfen, ob die Runde existiert
+if ($runde > count($locations)) {
+    // Lobby löschen, da die Runde ungültig ist
+    $deleteStmt = $conn->prepare("DELETE FROM lobbies WHERE lobby_code = ?");
+    if ($deleteStmt) {
+        try {
+            $deleteStmt->bind_param("s", $lobbyCode);
+            $deleteStmt->execute();
+            $deleteStmt->close();
+        } catch (Exception $e) {
+            error_log("Fehler beim Löschen der Lobby: " . $e->getMessage());
+            header("Location: index.php");
+            exit;
+        }
+    } else {
+        // SQL-Fehler protokollieren und Spieler weiterleiten
+        error_log("SQL-Fehler: " . $conn->error);
+        header("Location: index.php");
+        exit;
+    }
 }
 
 // Verarbeitung von POST-Daten für gespeicherte Guesses
@@ -55,24 +100,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 }
-
-// Alle Locations für die angegebene Lobby in Reihenfolge der Runden abrufen
-$stmt = $conn->prepare("SELECT latitude, longitude, round FROM locations WHERE lobby_code = ? ORDER BY round ASC");
-$stmt->bind_param("s", $lobbyCode);
-$stmt->execute();
-$result = $stmt->get_result();
-
-// Überprüfen, ob es Locations gibt
-if ($result->num_rows == 0) {
-    die("Keine Positionen gefunden. Das Spiel wurde möglicherweise nicht korrekt gestartet.");
-}
-
-$locations = [];
-while ($row = $result->fetch_assoc()) {
-    $locations[] = $row;
-}
-
-$stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -124,7 +151,7 @@ $stmt->close();
     let smallMap;
     let smallMapMarker;
     let markerPosition;
-    let currentLocationIndex = 0;
+    let currentLocationIndex = <?php echo $runde - 1; ?>; // Runde 1 entspricht Index 0
     let locations = <?php echo json_encode($locations); ?>;
     const lobbyCode = "<?php echo $lobbyCode; ?>";
     const playerName = "<?php echo $_SESSION['user_name'] ?? 'Unbekannt'; ?>";
@@ -154,28 +181,25 @@ $stmt->close();
     }
 
     function initMap() {
-        const randomLocation = {
+        const currentLocation = {
             lat: parseFloat(locations[currentLocationIndex].latitude),
             lng: parseFloat(locations[currentLocationIndex].longitude)
         };
 
         const panorama = new google.maps.StreetViewPanorama(document.getElementById("street-view"), {
-            position: randomLocation,
+            position: currentLocation,
             disableDefaultUI: true
         });
 
         smallMap = new google.maps.Map(document.getElementById("map"), {
-            center: {
-                lat: 48.4100,
-                lng: 15.6100
-            },
+            center: { lat: 48.4100, lng: 15.6100 },
             zoom: 12,
             mapTypeId: google.maps.MapTypeId.ROADMAP,
             disableDefaultUI: true
         });
 
         smallMapMarker = new google.maps.Marker({
-            position: randomLocation,
+            position: null, // Marker wird erst bei Klick gesetzt
             map: smallMap,
             visible: false
         });
@@ -202,28 +226,27 @@ $stmt->close();
             const score = calculatePoints(distance);
 
             fetch(window.location.href, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        lobbyCode: lobbyCode,
-                        runde: currentLocationIndex + 1,
-                        spielername: playerName,
-                        lat: markerPosition.lat(),
-                        lng: markerPosition.lng(),
-                        score: score
-                    })
-                }).then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // Weiterleitung zur Warte-Seite
-                        window.location.href = `waiting_room.php?lobbyCode=${lobbyCode}`;
-                    } else {
-                        alert('Fehler beim Absenden der Daten: ' + (data.error || 'Unbekannter Fehler.'));
-                    }
-                    submitButton.disabled = false; // Button nach Abschluss wieder aktivieren
-                });
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    lobbyCode: lobbyCode,
+                    runde: currentLocationIndex + 1, // Index + 1 für die Runde
+                    spielername: playerName,
+                    lat: markerPosition.lat(),
+                    lng: markerPosition.lng(),
+                    score: score
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Weiterleitung zur Warte-Seite
+                    window.location.href = `show_score.php?lobbyCode=${lobbyCode}&runde=${currentLocationIndex + 1}`;
+                } else {
+                    alert('Fehler beim Absenden der Daten: ' + (data.error || 'Unbekannter Fehler.'));
+                }
+                submitButton.disabled = false; // Button nach Abschluss wieder aktivieren
+            });
         } else {
             alert("Bitte setzen Sie zuerst einen Marker auf der Karte!");
         }

@@ -12,6 +12,7 @@ if (!isset($_GET['lobbyCode'])) {
 }
 
 $lobbyCode = $_GET['lobbyCode'];
+$round = intval($_GET['runde']);
 ?>
 
 <!DOCTYPE html>
@@ -23,13 +24,14 @@ $lobbyCode = $_GET['lobbyCode'];
     <title>Warten auf andere Spieler...</title>
     <script>
     const lobbyCode = "<?php echo $lobbyCode; ?>";
+    const round = "<?php echo $round; ?>";
 
     function checkStatus() {
         fetch(`check_status.php?lobbyCode=${lobbyCode}`)
             .then(response => response.json())
             .then(data => {
                 if (data.allGuessesSubmitted || data.timeExpired) {
-                    window.location.href = `show_score.php?lobbyCode=${lobbyCode}`;
+                    window.location.href = `show_score.php?lobbyCode=${lobbyCode}&runde=${round}`;
                 } else {
                     console.log("Warten auf Spieler:", data.debug);
                 }

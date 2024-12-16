@@ -8,7 +8,7 @@ require 'connection.php'; // Verbindung zur Datenbank
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Krems Guesser - Scoreboard</title>
+    <title>Krems Guesser - Bestenliste</title>
     <link rel="stylesheet" href="stylemain.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
@@ -164,7 +164,7 @@ require 'connection.php'; // Verbindung zur Datenbank
     <?php require 'navbar.php'; ?>
 
     <div class="boardstyle">
-        <h2 class="overlay-title">SCOREBOARD</h2>
+        <h2 class="overlay-title">BESTENLISTE</h2>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
             <path fill="#1e0028" fill-opacity="1"
                 d="M0,96L80,122.7C160,149,320,203,480,213.3C640,224,800,192,960,186.7C1120,181,1280,203,1360,213.3L1440,224L1440,0L1360,0C1280,0,1120,0,960,0C800,0,640,0,480,0C320,0,160,0,80,0L0,0Z">
@@ -193,7 +193,7 @@ require 'connection.php'; // Verbindung zur Datenbank
                     $rank_result = $rank_query->get_result();
                     $rank = $rank_result->fetch_assoc()['rank'];
 
-                    echo "<div class='user-score'>Your Rank: $rank | Your Score: " . htmlspecialchars($user_row['score']) . " | Name: " . htmlspecialchars($user_row['username']) . "</div>";
+                    echo "<div class='user-score'>Dein Rang: $rank | Dein Score: " . htmlspecialchars($user_row['score']) . " | Name: " . htmlspecialchars($user_row['username']) . "</div>";
                 }
             }
             ?>
@@ -201,7 +201,7 @@ require 'connection.php'; // Verbindung zur Datenbank
             <table class="scores-table">
                 <thead>
                     <tr>
-                        <th>Rank</th>
+                        <th>Rang</th>
                         <th>Score</th>
                         <th>Name</th>
                     </tr>

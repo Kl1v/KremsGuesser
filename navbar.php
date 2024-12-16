@@ -25,12 +25,12 @@ if (session_status() === PHP_SESSION_NONE) {
                 </li>
                 <li class="nav-item ms-1 mt-2">
                     <a class="nav-link text-white" aria-current="page" href="play.php">
-                        <h5>Play</h5>
+                        <h5>Spielen</h5>
                     </a>
                 </li>
                 <li class="nav-item ms-1 mt-2">
                     <a class="nav-link text-white" href="scoreboard.php">
-                        <h5>Scoreboard</h5>
+                        <h5>Bestenliste</h5>
                     </a>
                 </li>
                 <li class="nav-item ms-3">

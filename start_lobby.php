@@ -84,7 +84,7 @@ function startGame($conn, $lobbyCode) {
     $players = getPlayersInLobby($conn, $lobbyCode);
     foreach ($players as $player) {
         // Weiterleitung für alle Spieler
-        header("Location: game_multiplayer.php?code=$lobbyCode&lat={$location['latitude']}&lng={$location['longitude']}");
+        header("Location: game_multiplayer.php?code=$lobbyCode&runde=1");
         exit;
     }
 

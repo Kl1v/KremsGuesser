@@ -99,8 +99,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $rounds = isset($_POST['rounds']) ? intval($_POST['rounds']) : null;
     $timeLimit = isset($_POST['timeLimit']) ? intval($_POST['timeLimit']) : null;
 
-
-
     if (!$lobbyCode || !$rounds || !$timeLimit) {
         $errorMessage = 'Alle Felder müssen ausgefüllt sein!';
     } else {
@@ -125,130 +123,40 @@ $lobbyCode = generateUniqueLobbyCode($conn);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KremsGuesser - Lobby Erstellen</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <style>
-
-
-        .radio-group {
-            display: flex;
-            gap: 1rem; /* Abstand zwischen den Radio-Buttons */
-            justify-content: center; /* Zentriert die Buttons */
-        }
-
-        .radio {
-            display: flex;
-            align-items: center;
-        }
-
-        .radio-label {
-            cursor: pointer;
-        }
-
-        .radio input[type="radio"] {
-            position: absolute;
-            opacity: 0;
-        }
-
-        .radio input[type="radio"] + .radio-label:before {
-            content: '';
-            background: rgb(244, 244, 244);
-            border-radius: 100%;
-            border: 1px solid rgba(0, 0, 0, 0.25);
-            display: inline-block;
-            width: 1.4em;
-            height: 1.4em;
-            position: relative;
-            top: -0.2em;
-            margin-right: 1em;
-            vertical-align: top;
-            cursor: pointer;
-            text-align: center;
-            transition: all 250ms ease;
-        }
-
-        .radio input[type="radio"]:checked + .radio-label:before {
-            background-color: rgb(101, 73, 139);
-            box-shadow: inset 0 0 0 4px rgb(244, 244, 244);
-        }
-
-        .radio input[type="radio"]:focus + .radio-label:before {
-            outline: none;
-            border-color: rgb(101, 73, 139);
-        }
-
-        .radio input[type="radio"]:disabled + .radio-label:before {
-            box-shadow: inset 0 0 0 4px rgb(244, 244, 244);
-            border-color: rgba(0, 0, 0, 0.25);
-            background: rgba(0, 0, 0, 0.25);
-        }
-
-        .radio .radio-label:empty:before {
-            margin-right: 0;
-        }
-
-        input[name="timeLimit"] {
-            width: 100%;
-            max-width: 185px;
-            padding: 0.5rem;
-            font-size: 1rem;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        ::placeholder {
-        color: lightgray;
-        }
-    </style>
 </head>
 
 <body style="padding-top: 70px;">
     <?php require 'navbar.php'; ?>
 
     <div class="container">
-        <div class="play-container" data-aos="fade-down" data-aos-duration="1000">
-            <h1 class="text-center">Lobby erstellen</h1>
+        <div class="play-container">
+            <h1 class="text-center">Lobby Erstellen</h1>
             <?php if (isset($errorMessage)) : ?>
                 <div class="alert alert-danger"><?php echo $errorMessage; ?></div>
             <?php endif; ?>
 
-            <form method="POST" >
-                <div class="d-flex flex-column align-items-center gap-3" >
+            <form method="POST">
+                <div class="d-flex flex-column align-items-center gap-3">
                     <div class="code-container w-100">
-                        <h2>Code</h2>
-                        <div class="lobby-code-container">
-                            <input type="number" placeholder="<?php echo $lobbyCode; ?>" maxlength="4" class="lobby-code-input" readonly name="lobbyCode" disabled>
-                        </div>
+                        <h1>Code</h1>
+                        <input type="text" maxlength="4" value="<?php echo $lobbyCode; ?>" readonly name="lobbyCode">
                     </div>
                     <div class="code-container w-100">
-                        <h2>Runden</h2>
-                        <div class="radio-group">
-                            <div class="radio">
-                                <input id="round3" name="rounds" type="radio" value="3" checked>
-                                <label for="round3" class="radio-label">3</label>
-                            </div>
-                            <div class="radio">
-                                <input id="round5" name="rounds" type="radio" value="5">
-                                <label for="round5" class="radio-label">5</label>
-                            </div>
-                            <div class="radio">
-                                <input id="round10" name="rounds" type="radio" value="10">
-                                <label for="round10" class="radio-label">10</label>
-                            </div>
-                        </div>
+                        <h1>RUNDEN:</h1>
+                        <input type="radio" id="round3" name="rounds" value="3" checked><label for="round3">3</label>
+                        <input type="radio" id="round5" name="rounds" value="5"><label for="round5">5</label>
+                        <input type="radio" id="round10" name="rounds" value="10"><label for="round10">10</label>
                     </div>
                     <div class="code-container w-100">
-                        <h2>Zeitlimit pro Runde</h2>
-                        <input type="number" min="10" max="120" name="timeLimit" placeholder="maximal 120 Sekunden">
+                        <h1>ZEITLIMIT PRO RUNDE</h1>
+                        <input type="number" min="10" max="120" name="timeLimit">
                     </div>
-                    <button type="submit" class="start-button">Lobby erstellen</button>
+                    <button type="submit" class="btn btn-warning">START</button>
                 </div>
             </form>
         </div>
     </div>
-    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script>
-        AOS.init();
-    </script>
 </body>
 
 </html>
