@@ -36,45 +36,7 @@ session_start();
 
 </head>
 <body style="padding-top: 70px;">
-<nav class="navbar navbar-expand-lg fixed-top" style="background-color: #1e0028;">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="#" style="color: #FFD700; font-weight: bold; font-size: 1.5rem;">KREMSGUESSER</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto align-items-center">
-                <li class="nav-item ms-1 mt-2">
-                    <a class="nav-link text-white" aria-current="page" href="play.php"><h5>Play</h5></a>
-                </li>
-                <li class="nav-item ms-1 mt-2">
-                    <a class="nav-link text-white" href="index.php"><h5>Home</h5></a>
-                </li>
-                <li class="nav-item ms-1 mt-2">
-                    <a class="nav-link text-white" href="scoreboard.php"><h5>Scoreboard</h5></a>
-                </li>
-                <li class="nav-item ms-3">
-                    <?php if (isset($_SESSION['user_name'])): ?>
-                        <!-- Eingeloggt: Logout-Button anzeigen -->
-                        <form action="logout.php" method="POST" style="display: inline;">
-                            <button type="submit" class="btn btn-danger d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
-                                Logout
-                            </button>
-                        </form>
-                    <?php else: ?>
-                        <!-- Nicht eingeloggt: Login-Button anzeigen -->
-                        <a href="login.php" style="text-decoration: none;">
-                            <button type="button" class="btn btn-warning d-flex align-items-center" style="border-radius: 20px; font-weight: bold;">
-                                Login
-                                <img src="img/benutzerbild.png" alt="User Image" width="20" height="20" class="ms-2">
-                            </button>
-                        </a>
-                    <?php endif; ?>
-                </li>
-            </ul>
-        </div>
-    </div>
-</nav>
+    <?php require 'navbar.php'; ?>
 
 
 <!-- hier noch Modal machen wenn code falsch/nicht eingegeben ist!!!!!!-->

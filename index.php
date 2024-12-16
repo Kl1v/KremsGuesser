@@ -58,7 +58,7 @@ require 'connection.php'; // Datenbankverbindung einbinden
     </style>
 </head>
 <body>
-    <? require "navbar.php"?>
+    <?php require 'navbar.php'; ?>
 
     <!-- Grid System -->
     <div class="container-fluid">
