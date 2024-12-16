@@ -49,9 +49,6 @@ body {
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.code-container h1 {
-    color: #52386e;
-}
 
 .code-container input {
     border-radius: 8px;
