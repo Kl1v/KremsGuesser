@@ -127,7 +127,7 @@ function calculateDistance($lat1, $lon1, $lat2, $lon2) {
 
         <?php if ($isHost): ?>
         <form method="GET" action="game_multiplayer.php">
-            <input type="hidden" name="lobbyCode" value="<?php echo htmlspecialchars($lobbyCode); ?>">
+            <input type="hidden" name="code" value="<?php echo htmlspecialchars($lobbyCode); ?>">
             <input type="hidden" name="runde" value="<?php echo $currentRound + 1; ?>">
             <button type="submit" class="btn btn-primary">Nächste Runde</button>
         </form>
