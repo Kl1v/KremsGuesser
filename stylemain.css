@@ -115,24 +115,19 @@
 .card-title {
     font-size: 1.5rem;
     font-weight: bold;
-    color: white !important;
+    color: #620083 !important;
 }
 
 .card-text {
     font-size: 1rem;
     line-height: 1.6;
-    color: white;
+    color: #620083;
 }
 
 .LoginRegisterCard {
     margin-top: 20px;
     margin-bottom: 100px;
 }
-
-
-
-
-
 
 
 

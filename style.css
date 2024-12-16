@@ -59,7 +59,6 @@ body {
     background-color: #65498b;
     padding: 6px;
     color: white;
-    width: 100px;
 }
 
 /* Container für das Input-Feld */
@@ -82,7 +81,7 @@ body {
     outline: none;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     color: #52386e;
-    background-color: #65498b;
+    background-color: #ffffff;
 }
 
 .lobby-code-input::placeholder {
@@ -199,7 +198,7 @@ input[type="number"]::-webkit-outer-spin-button {
     background-color: #fd0;
     font-weight: 500;
     color: #222;
-    transition: transform 0.4s ease, background-color 0.4s ease;
+    transition: transform 0.2s ease, background-color 0.3s ease;
 
 }
 
@@ -220,8 +219,3 @@ a.link-register {
 a.link-login {
     color: rgb(77, 77, 198);
 }
-
-
-
-
-
