@@ -1,68 +1,96 @@
 <?php
 session_start();
+require 'connection.php'; // Verbindung zur Datenbank
+
+// Wenn das Formular abgeschickt wurde
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $lobbyCode = $_POST['lobbyCode'];
+
+    // Prüfe, ob die Lobby existiert
+    $stmt = $conn->prepare("SELECT * FROM lobbies WHERE code = ?");
+    $stmt->bind_param("s", $lobbyCode);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows > 0) {
+        // Lobby existiert, Benutzer zur Lobby hinzufügen
+        $lobby = $result->fetch_assoc();
+        $username = $_SESSION['user_name']; // Der Benutzername aus der Session
+
+        // Prüfe, ob der Benutzer bereits in der Lobby ist
+        $checkPlayerStmt = $conn->prepare("SELECT * FROM players WHERE username = ? AND lobby_code = ?");
+        $checkPlayerStmt->bind_param("ss", $username, $lobbyCode);
+        $checkPlayerStmt->execute();
+        $checkPlayerResult = $checkPlayerStmt->get_result();
+
+        if ($checkPlayerResult->num_rows == 0) {
+            // Benutzer ist noch nicht in der Lobby -> hinzufügen
+            $addPlayerStmt = $conn->prepare("INSERT INTO players (username, lobby_code, is_host) VALUES (?, ?, 0)");
+            $addPlayerStmt->bind_param("ss", $username, $lobbyCode);
+            $addPlayerStmt->execute();
+            $addPlayerStmt->close();
+        }
+
+        $checkPlayerStmt->close();
+        header("Location: start_lobby.php?code=$lobbyCode"); // Weiterleitung zur Lobby
+        exit;
+    } else {
+        // Lobby existiert nicht
+        $error = "Dieser Lobby-Code existiert nicht.";
+    }
+
+    $stmt->close();
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KremsGuesser</title>
+    <title>KremsGuesser - Lobby beitreten</title>
     <link rel="stylesheet" href="stylemain.css">
     <link rel="stylesheet" href="style.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
-
-    <style>
-        .lobby-code-input {
-    width: 200px;
-    padding: 10px;
-    font-size: 24px;
-    font-weight: bold;
-    letter-spacing: 10px;
-    text-align: center;
-    border: 2px solid #52386e;
-    border-radius: 8px;
-    outline: none;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    color: #52386e;
-    background-color: #52386e;
-}
-    </style>
-
-
-
-
-
 </head>
+
 <body style="padding-top: 70px;">
+    <!-- Navbar -->
     <?php require 'navbar.php'; ?>
 
-
-<!-- hier noch Modal machen wenn code falsch/nicht eingegeben ist!!!!!!-->
-
-
-<!-- Content Section -->
-<div class="container" data-aos="fade-down" data-aos-duration="1000">
-    <div class="play-container" >
-        <h1>Lobby beitreten</h1>
-        <h4>Gib den Code der Lobby ein</h4>
-        <div class="code-container mb-4">
-            <h1 class="mb-3">Code</h1>
-            <div class="lobby-code-container">
-                <input type="number" placeholder="X X X X" maxlength="4" class="lobby-code-input" oninput="this.value=this.value.slice(0,4)">
-            </div>
-        </div>
-        <div class="d-flex flex-column align-items-center gap-3">
-            <button type="submit" class="start-button">Lobby beitreten</button>
+    <!-- Content Section -->
+    <div class="container">
+        <div class="play-container">
+            <h1>Lobby beitreten</h1>
+            <h4>Gib den Code der Lobby ein</h4>
+            <form method="POST" action="join_lobby.php" class="mb-4">
+                <div class="code-container mb-4">
+                    <h1 class="mb-3">Code</h1>
+                    <div class="lobby-code-container">
+                        <input 
+                            type="number" 
+                            name="lobbyCode" 
+                            placeholder="X X X X" 
+                            maxlength="4" 
+                            class="lobby-code-input" 
+                            required 
+                            oninput="this.value=this.value.slice(0,4)">
+                    </div>
+                </div>
+                <div class="d-flex flex-column align-items-center gap-3">
+                    <button type="submit" class="btn-custom-scnd">Lobby beitreten</button>
+                </div>
+            </form>
+            <?php if (isset($error)): ?>
+                <div class="alert alert-danger text-center">
+                    <?php echo htmlspecialchars($error); ?>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
-    <script>
-        AOS.init();
-    </script></body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
