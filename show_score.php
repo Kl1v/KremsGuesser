@@ -84,16 +84,30 @@ function calculateDistance($lat1, $lon1, $lat2, $lon2) {
         border: 1px solid #ccc;
     }
 
-    table {
+    .table-container {
         margin-top: 20px;
-        width: 100%;
     }
 
-    th,
-    td {
-        padding: 10px;
-        text-align: left;
-        border-bottom: 1px solid #ddd;
+    .table {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .table thead {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .table thead th {
+        text-transform: uppercase;
+        font-weight: bold;
+        letter-spacing: 0.05em;
+    }
+
+    .table tbody tr:hover {
+        background-color: #e9ecef;
     }
     </style>
 </head>
@@ -104,77 +118,75 @@ function calculateDistance($lat1, $lon1, $lat2, $lon2) {
     <div class="container">
         <div id="map"></div>
 
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>Spielername</th>
-                    <th>Entfernung (in km)</th>
-                    <th>Punkte</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($guesses as $guess): 
-                    $distance = calculateDistance($currentLocation['latitude'], $currentLocation['longitude'], $guess['lat'], $guess['lng']);
-                ?>
-                <tr>
-                    <td><?php echo htmlspecialchars($guess['spielername']); ?></td>
-                    <td><?php echo number_format($distance, 2); ?> km</td>
-                    <td><?php echo $guess['score']; ?></td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+        <div class="table-container">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Spielername</th>
+                        <th>Entfernung (in km)</th>
+                        <th>Punkte</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($guesses as $guess): 
+                        $distance = calculateDistance($currentLocation['latitude'], $currentLocation['longitude'], $guess['lat'], $guess['lng']);
+                    ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($guess['spielername']); ?></td>
+                        <td><?php echo number_format($distance, 2); ?> km</td>
+                        <td><?php echo $guess['score']; ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
 
-        <?php if ($isHost): ?>
-        <form method="GET" action="game_multiplayer.php">
-            <input type="hidden" name="code" value="<?php echo htmlspecialchars($lobbyCode); ?>">
-            <input type="hidden" name="runde" value="<?php echo $currentRound + 1; ?>">
-            <button type="submit" class="btn btn-primary">Nächste Runde</button>
-        </form>
-        <?php endif; ?>
-    </div>
+        <script>
+        let map;
+        const currentLocation = <?php echo json_encode($currentLocation); ?>;
+        const guesses = <?php echo json_encode($guesses); ?>;
 
-    <script>
-    let map;
-    const currentLocation = <?php echo json_encode($currentLocation); ?>;
-    const guesses = <?php echo json_encode($guesses); ?>;
-
-    function initMap() {
-        // Initialisiere die Karte
-        map = new google.maps.Map(document.getElementById('map'), {
-            zoom: 13,
-            center: {
-                lat: parseFloat(currentLocation.latitude),
-                lng: parseFloat(currentLocation.longitude)
-            }, // Zentrum: aktuelle Location
-        });
-
-        // Marker für die richtige Position
-        new google.maps.Marker({
-            position: {
-                lat: parseFloat(currentLocation.latitude),
-                lng: parseFloat(currentLocation.longitude)
-            },
-            map: map,
-            title: `Richtige Position für Runde <?php echo $currentRound; ?>`,
-            icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
-        });
-
-        // Marker für die Spieler-Guesses
-        guesses.forEach(guess => {
-            const position = {
-                lat: parseFloat(guess.lat),
-                lng: parseFloat(guess.lng)
-            };
-            new google.maps.Marker({
-                position: position,
-                map: map,
-                title: `${guess.spielername}`,
-                icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+        function initMap() {
+            // Initialisiere die Karte
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 13,
+                center: {
+                    lat: parseFloat(currentLocation.latitude),
+                    lng: parseFloat(currentLocation.longitude)
+                }, // Zentrum: aktuelle Location
             });
-        });
-    }
-    </script>
+
+            // Marker für die richtige Position
+            new google.maps.Marker({
+                position: {
+                    lat: parseFloat(currentLocation.latitude),
+                    lng: parseFloat(currentLocation.longitude)
+                },
+                map: map,
+                title: `Richtige Position für Runde <?php echo $currentRound; ?>`,
+                icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
+            });
+
+            // Marker für die Spieler-Guesses
+            guesses.forEach(guess => {
+                const position = {
+                    lat: parseFloat(guess.lat),
+                    lng: parseFloat(guess.lng)
+                };
+                new google.maps.Marker({
+                    position: position,
+                    map: map,
+                    title: `${guess.spielername}`,
+                    icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                });
+            });
+        }
+        setTimeout(() => {
+            const nextRoundUrl =
+                `game_multiplayer.php?code=<?php echo htmlspecialchars($lobbyCode); ?>&runde=<?php echo $currentRound + 1; ?>`;
+            window.location.href = nextRoundUrl;
+        }, 20000); // 10 Sekunden
+        </script>
 </body>
 
 </html>

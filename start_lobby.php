@@ -242,12 +242,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['startGame'])) {
                     <div class="mt-4 text-center">
                         <!-- Nur der Host kann die Lobby schließen -->
                         <?php if ($_SESSION['user_name'] === $host['username']): ?>
-                        <form method="POST" onsubmit="return confirm('Möchtest du die Lobby wirklich schließen?');">
+                        <form method="POST">
                             <button type="submit" name="closeLobby" class="btn btn-close-lobby w-40 mb-2">
                                 Lobby schließen
                             </button>
                         </form>
-                        <form method="POST" onsubmit="return confirm('Möchtest du das Spiel wirklich starten?');">
+                        <form method="POST">
                             <button type="submit" name="startGame" class="btn btn-success w-40 mb-2">
                                 Spiel starten
                             </button>
@@ -279,14 +279,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['startGame'])) {
                 players.forEach(player => {
                     const li = document.createElement('li');
                     li.className = 'list-group-item d-flex justify-content-between align-items-center';
-                    li.innerHTML = `${player.username} ${player.is_host == 1 ? '(Host)' : ''}`;
+                    li.innerHTML = `${player.username} ${player.is_host == 1 ? '' : ''}`;
                     playerList.appendChild(li);
                 });
             });
     }
 
     loadPlayers();
-    setInterval(loadPlayers, 000); // Alle 5 Sekunden die Spieler aktualisieren
+    setInterval(loadPlayers, 1000); // Alle 5 Sekunden die Spieler aktualisieren
 
     // Überprüfen, ob das Spiel gestartet wurde
     setInterval(() => {
@@ -298,7 +298,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['startGame'])) {
                     location.href = `game_multiplayer.php?code=${lobbyCode}`;
                 }
             });
-    }, 2000); // Alle 2 Sekunden prüfen
+    }, 1000); // Alle 2 Sekunden prüfen
     </script>
 </body>
 

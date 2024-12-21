@@ -12,7 +12,7 @@ $lobbyCode = $_GET['lobbyCode'];
 $playerCountQuery = $conn->prepare("
     SELECT COUNT(*) as player_count
     FROM players
-    WHERE lobby_code = ?
+    WHERE code = ?
 ");
 $playerCountQuery->bind_param("s", $lobbyCode);
 $playerCountQuery->execute();
