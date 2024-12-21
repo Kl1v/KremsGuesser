@@ -32,6 +32,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt->bind_param("s", $lobbyCode);
     $stmt->execute();
     $stmt->close();
+
+    $stmt = $conn->prepare("DELETE FROM guesses WHERE lobby_id = ?");
+    $stmt->bind_param("s", $lobbyCode);
+    $stmt->execute();
+    $stmt->close();
     // Umleiten zur Startseite nach erfolgreichem Löschen
     header('Location: index.php');
     exit;
@@ -49,27 +54,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <style>
     body {
         padding-top: 150px;
+        background-color: #f8f9fa;
+    }
+
+    .table-container {
+        margin-top: 30px;
+        background-color: white;
+        border-radius: 15px;
+        padding: 20px;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
     }
 
     .table {
-        margin-top: 20px;
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
         border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
     }
 
     .table thead {
-        background-color: #007bff;
+        background: linear-gradient(90deg, #007bff, #6610f2);
         color: white;
     }
 
     .table thead th {
+        padding: 15px;
         text-transform: uppercase;
         font-weight: bold;
         letter-spacing: 0.05em;
+        border: none;
+    }
+
+    .table tbody tr:nth-child(even) {
+        background-color: #f2f2f2;
+    }
+
+    .table tbody tr:nth-child(odd) {
+        background-color: #ffffff;
     }
 
     .table tbody tr:hover {
-        background-color: #e9ecef;
+        background-color: #d6e9ff;
+    }
+
+    .table td {
+        padding: 12px 15px;
+        border: none;
+    }
+
+    .table th:first-child,
+    .table td:first-child {
+        border-top-left-radius: 10px;
+        border-bottom-left-radius: 10px;
+    }
+
+    .table th:last-child,
+    .table td:last-child {
+        border-top-right-radius: 10px;
+        border-bottom-right-radius: 10px;
+    }
+
+    #backToHome {
+        margin-top: 20px;
+        padding: 10px 20px;
+        font-size: 18px;
+        border-radius: 8px;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    #backToHome:hover {
+        background-color: #6610f2;
+        color: white;
     }
     </style>
     <script>
@@ -80,6 +136,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const form = document.getElementById('deleteLobbyForm');
             form.submit();
         });
+
+        // Event-Listener für das Verlassen der Seite
+        window.addEventListener("beforeunload", () => {
+            // Wenn die Seite verlassen wird, wird die Lobby gelöscht
+            const form = document.getElementById('deleteLobbyForm');
+            form.submit();
+        });
     });
     </script>
 </head>
@@ -87,27 +150,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <?php require 'navbar.php'?>
     <div class="container">
-        <h1>Endergebnisse für Lobby: <?php echo htmlspecialchars($lobbyCode); ?></h1>
+        <h1 class="text-center">Endergebnisse für Lobby: <?php echo htmlspecialchars($lobbyCode); ?></h1>
 
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Rang</th>
-                    <th>Spielername</th>
-                    <th>Gesamtpunkte</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php $rank = 1; ?>
-                <?php foreach ($finalResults as $result): ?>
-                <tr>
-                    <td><?php echo $rank++; ?></td>
-                    <td><?php echo htmlspecialchars($result['spielername']); ?></td>
-                    <td><?php echo $result['total_score']; ?></td>
-                </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
+        <div class="table-container">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Rang</th>
+                        <th>Spielername</th>
+                        <th>Gesamtpunkte</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php $rank = 1; ?>
+                    <?php foreach ($finalResults as $result): ?>
+                    <tr>
+                        <td><?php echo $rank++; ?></td>
+                        <td><?php echo htmlspecialchars($result['spielername']); ?></td>
+                        <td><?php echo $result['total_score']; ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
 
         <!-- Formular zum Löschen der Lobby -->
         <form id="deleteLobbyForm" method="POST" style="display: none;">
@@ -115,8 +180,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <!-- Button zum Zurück zur Startseite -->
-        <button id="backToHome" class="btn btn-primary">Zurück zur Startseite</button>
-
+        <button id="backToHome" class="btn btn-primary d-block mx-auto">Zurück zur Startseite</button>
     </div>
 </body>
 

@@ -92,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 }
+
 $stmt = $conn->prepare("SELECT rounds FROM lobbies WHERE code = ?");
 $stmt->bind_param("s", $lobbyCode);
 $stmt->execute();
