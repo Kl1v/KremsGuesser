@@ -14,7 +14,7 @@ if (isset($_GET['lobbyCode'])) {
 }
 
 // Gesamtergebnisse abrufen
-$stmt = $conn->prepare("\n    SELECT g.spielername, SUM(g.score) AS total_score \n    FROM guesses g\n    WHERE g.lobby_id = ?\n    GROUP BY g.spielername\n    ORDER BY total_score DESC\n");
+$stmt = $conn->prepare("SELECT g.spielername, SUM(g.score) AS total_score FROM guesses g WHERE g.lobby_id = ? GROUP BY g.spielername ORDER BY total_score DESC");
 $stmt->bind_param("s", $lobbyCode);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -25,13 +25,15 @@ while ($row = $result->fetch_assoc()) {
 }
 $stmt->close();
 
-// Löschlogik für Lobby
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deleteLobby'])) {
-    $stmt = $conn->prepare("DELETE FROM lobbies WHERE lobby_code = ?");
+// Löschlogik für Lobby (geändert: direkt hier im gleichen Skript)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Löschen der Lobby
+    $stmt = $conn->prepare("DELETE FROM lobbies WHERE code = ?");
     $stmt->bind_param("s", $lobbyCode);
     $stmt->execute();
     $stmt->close();
-    echo json_encode(["success" => true]);
+    // Umleiten zur Startseite nach erfolgreichem Löschen
+    header('Location: index.php');
     exit;
 }
 ?>
@@ -72,33 +74,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deleteLobby'])) {
     </style>
     <script>
     document.addEventListener("DOMContentLoaded", () => {
-
-        // Lobby löschen, wenn die Seite verlassen wird
-        const deleteLobbyOnLeave = () => {
-            fetch("?lobbyCode=<?php echo htmlspecialchars($lobbyCode); ?>", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                    },
-                    body: new URLSearchParams({
-                        deleteLobby: true
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        console.log("Lobby erfolgreich gelöscht beim Verlassen der Seite.");
-                    }
-                })
-                .catch(err => console.error("Fehler beim Löschen der Lobby: ", err));
-        };
-
-        // Event-Listener für Seitenwechsel
-        window.addEventListener("beforeunload", deleteLobbyOnLeave);
-        document.addEventListener("visibilitychange", () => {
-            if (document.visibilityState === "hidden") {
-                deleteLobbyOnLeave();
-            }
+        // Event-Listener für den Button "Zurück zur Startseite"
+        document.getElementById("backToHome").addEventListener("click", () => {
+            // Beim Klick auf den Button das Formular absenden
+            const form = document.getElementById('deleteLobbyForm');
+            form.submit();
         });
     });
     </script>
@@ -129,7 +109,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['deleteLobby'])) {
             </tbody>
         </table>
 
-        <a href="index.php" class="btn btn-primary">Zurück zur Startseite</a>
+        <!-- Formular zum Löschen der Lobby -->
+        <form id="deleteLobbyForm" method="POST" style="display: none;">
+            <input type="hidden" name="deleteLobby" value="true">
+        </form>
+
+        <!-- Button zum Zurück zur Startseite -->
+        <button id="backToHome" class="btn btn-primary">Zurück zur Startseite</button>
+
     </div>
 </body>
 
