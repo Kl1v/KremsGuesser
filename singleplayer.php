@@ -87,11 +87,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         right: 20px;
         border: 1px solid #ccc;
         z-index: 100;
+        cursor: crosshair;
     }
 
     #map:hover {
-        height: 60vh;
-        width: 60vw;
+        height: 70vh;
+        width: 70vw;
+        cursor: crosshair;
     }
 
     #street-view {
