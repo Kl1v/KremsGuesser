@@ -83,6 +83,11 @@ require 'connection.php'; // Verbindung zur Datenbank
         width: 100%;
         border-collapse: collapse;
     }
+    .start-button a {
+    color: #fff; /* Macht die Schrift weiß */
+    text-decoration: none; /* Entfernt die Unterstreichung */
+    }
+
 
     .scores-table th,
     .scores-table td {
@@ -105,19 +110,8 @@ require 'connection.php'; // Verbindung zur Datenbank
         text-align: center;
     }
 
-    .start-button a {
-        text-decoration: none;
-        font-size: 1.2em;
-        color: #fff;
-        background-color: #FFC800;
-        padding: 10px 20px;
-        border-radius: 25px;
-        transition: background-color 0.3s ease;
-    }
 
-    .start-button a:hover {
-        background-color: #E6A600;
-    }
+
 
     footer {
         text-align: center;
@@ -266,7 +260,7 @@ require 'connection.php'; // Verbindung zur Datenbank
                     </tbody>
                 </table>
             
-                <button class="start-button" href="play.php">START</button>
+                <button class="start-button"><a href="play.php">START</a></button>
             </section>
         </main>
 
