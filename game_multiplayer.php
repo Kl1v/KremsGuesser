@@ -14,10 +14,26 @@ if (isset($_GET['code'])) {
 } else {
     die("Kein Lobby-Code übergeben.");
 }
+$started = null;
+$stmt = $conn->prepare("SELECT started_at FROM locations WHERE round = ? AND lobby_code = ?");
+$stmt->bind_param("is", $runde, $lobbyCode);
+$stmt->execute();
+$result = $stmt->get_result(); // get_result() verwenden, um das Ergebnis abzurufen
+$row = $result->fetch_assoc(); // fetch_assoc() holt das Ergebnis als assoziatives Array
+$stmt->close();
 
-// Zeitlimit aus der Datenbank abrufen
-$stmt = $conn->prepare("SELECT time_limit FROM lobbies WHERE code = ?");
-$stmt->bind_param("s", $lobbyCode);
+if (!$row || is_null($row['started_at'])) {
+    // Wenn noch kein Datum gesetzt ist, führe das Update durch
+    $stmt = $conn->prepare("UPDATE locations SET started_at = NOW() WHERE round = ? AND lobby_code = ?");
+    $stmt->bind_param("is", $runde, $lobbyCode);
+    $stmt->execute();
+    $stmt->close();
+}
+
+$stmt = $conn->prepare("SELECT time_limit, started_at FROM lobbies 
+                        JOIN locations ON lobbies.code = locations.lobby_code 
+                        WHERE locations.round = ? AND locations.lobby_code = ?");
+$stmt->bind_param("is", $runde, $lobbyCode);
 $stmt->execute();
 $result = $stmt->get_result();
 
@@ -27,6 +43,11 @@ if ($result->num_rows === 0) {
 
 $row = $result->fetch_assoc();
 $timeLimit = intval($row['time_limit']); // Zeitlimit in Sekunden
+$startedAt = strtotime($row['started_at']); // Startzeit als Unix-Zeitstempel
+$currentTime = time(); // Aktuelle Zeit
+$elapsedTime = $currentTime - $startedAt;
+$remainingTime = max($timeLimit - $elapsedTime, 0); // Mindestens 0 Sekunden
+
 $stmt->close();
 
 // Alle Locations für die angegebene Lobby in Reihenfolge der Runden abrufen
@@ -105,7 +126,6 @@ $maxRounds = $lobbyData['rounds'];
 // Prüfen, ob die maximale Anzahl an Runden erreicht wurde
 if ($_GET['runde'] > $maxRounds) {
     header("Location: final_results.php?lobbyCode=$lobbyCode");
-    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -308,29 +328,45 @@ if ($_GET['runde'] > $maxRounds) {
         });
     }
 
-    function startTimer(duration, display) {
-        let timer = duration,
-            minutes, seconds;
-        const interval = setInterval(() => {
-            minutes = parseInt(timer / 60, 10);
-            seconds = parseInt(timer % 60, 10);
-
-            minutes = minutes < 10 ? "0" + minutes : minutes;
-            seconds = seconds < 10 ? "0" + seconds : seconds;
-
-            display.textContent = minutes + ":" + seconds;
-
-            if (--timer < 0) {
-                clearInterval(interval);
-                document.getElementById('submit-btn').click(); // Automatisch absenden
-            }
-        }, 1000);
-    }
-
     document.addEventListener("DOMContentLoaded", () => {
-        const timerDisplay = document.getElementById("timer-countdown");
-        startTimer(timeLimit, timerDisplay);
-    });
+    const timerDisplay = document.getElementById("timer-countdown");
+    startTimer(timeLimit, timerDisplay);
+});
+
+let remainingTime = <?php echo $remainingTime; ?>;
+const timerDisplay = document.getElementById("timer-countdown");
+
+document.addEventListener("DOMContentLoaded", () => {
+    startTimer(remainingTime, timerDisplay);
+});
+
+function startTimer(duration, display) {
+    let timer = duration;
+    const interval = setInterval(() => {
+        const minutes = Math.floor(timer / 60);
+        const seconds = timer % 60;
+
+        display.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+        if (timer <= 10) {
+            display.parentElement.style.background = 'linear-gradient(135deg, #ff4e50, #ff8a65)';
+            display.parentElement.style.boxShadow = '0 6px 20px rgba(255, 78, 80, 0.5)';
+        }
+        if (timer <= 5) {
+            display.parentElement.style.background = 'linear-gradient(135deg, rgb(255, 0, 4), rgb(255, 82, 29))';
+            display.parentElement.style.boxShadow = '0 6px 20px rgba(112, 0, 2, 0.5)';
+            redOverlay.style.display = "block";
+        }
+
+        if (timer-- <= 0) {
+            clearInterval(interval);
+            document.getElementById('submit-btn').disabled = true;
+            setTimeout(() => {
+                window.location.href = `show_score.php?lobbyCode=${lobbyCode}&runde=${currentLocationIndex + 1}`;
+            }, 5000);
+        }
+    }, 1000);
+}
 
     document.getElementById('submit-btn').addEventListener('click', () => {
         if (markerPosition) {

@@ -168,6 +168,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['startGame'])) {
     <title>Lobby - <?php echo htmlspecialchars($lobbyCode); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+
+    .player-list .list-group-item {
+        background-color: rgba(30, 0, 40, 0.58); /* Gleiche Hintergrundfarbe wie die Navbar */
+        color: white; /* Weißer Text */
+        border: none; /* Entfernt die Standard-Ränder */
+        font-size: 18px; /* Größere Schrift */
+        padding: 15px; /* Mehr Innenabstand */
+        border-bottom: 1px solid rgba(255, 255, 255, 0.5); /* Weißer Strich mit Transparenz */
+    }
+
+    .player-list .list-group-item:last-child {
+        border-bottom: none; /* Entfernt den Strich beim letzten Element */
+    }
+
+
     .card {
         border: none;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
@@ -207,17 +222,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['startGame'])) {
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.7);
+        background-color: rgba(0, 0, 0, 0.24);
         z-index: -1;
     }
 
     .card {
+        height:auto;
         color: white;
         border: none;
-        background-color: #2e003e;
+        background-color:#65498b;
         box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         min-height: 93vh;
     }
+    .btn {
+        color: white;
+    display: inline-block;
+    outline: 0;
+    border: none;
+    cursor: pointer;
+    color: #222;
+    transition: transform 0.2s ease, background-color 0.3s ease;
+    
+    
+    }
+    .btn:hover {
+    transform: scale(1.15);
+
+    }
+    .player-list .list-group-item {
+        background-color:rgba(30, 0, 40, 0.58); /* Gleiche Hintergrundfarbe wie die Navbar */
+        color: white; /* Weißer Text */
+        border: none; /* Optional: Entfernt die Ränder */
+        font-size: 18px; /* Größere Schrift */
+        padding: 15px; /* Mehr Innenabstand */
+    }
+
+
+    .start-button{
+        background-color:#4E7358;
+        padding: 0 24px;
+            min-width: 200px;
+            height: 50px;
+            font-size: 18px;    
+            font-weight: 500;
+    }
+    .start-button:hover{
+        background-color:#4E7358;
+        transform: scale(1.1)!important;
+
+    }
+
+    
     </style>
 </head>
 
@@ -229,37 +284,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['startGame'])) {
         <div class="row justify-content-center">
             <div class="col-lg-8">
                 <div class="card p-4">
-                    <div class="lobby-header">
-                        <h1>Lobby: <strong><?php echo htmlspecialchars($lobbyCode); ?></strong></h1>
-                        <p>Host: <strong><?php echo htmlspecialchars($host['username']); ?></strong></p>
+                <div class="lobby-header mt-3" style="display: flex; justify-content: center; align-items: center; position: relative;">
+                    <!-- Lobby Code and Host Username -->
+                    <div style="text-align: center;">
+                        <h1 class="mb-0">Lobby Code: <strong><?php echo htmlspecialchars($lobbyCode); ?></strong></h1>
                     </div>
 
+                    <!-- Close or Leave Button (positioned to the right) -->
+                    <div style="position: absolute; right: 0;">
+                        <?php if ($_SESSION['user_name'] === $host['username']): ?>
+                            <form method="POST" class="mb-1">
+                                <button type="submit" name="closeLobby" class="btn" style="color: white;">
+                                    <img src="img/Cross.png" alt="Lobby schließen" style="width: 40px; height: 40px;" >
+                                </button>
+                            </form>
+                        <?php else: ?>
+                            <form method="POST" class="mb-1">
+                                <button type="submit" name="leaveLobby" class="btn" style="color: white;">
+                                    <img src="img/leave.png" alt="Lobby verlassen" style="width: 40px; height: 40px;" >
+                                </button>
+                            </form>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+
+
+
                     <h4 class="mb-4">Spieler in dieser Lobby:</h4>
+
                     <ul class="list-group player-list" id="playerList">
                         <!-- Spieler werden hier dynamisch mit JavaScript geladen -->
                     </ul>
 
-                    <div class="mt-4 text-center">
+                    <div class="mt-4 d-flex flex-column align-items-end">
                         <!-- Nur der Host kann die Lobby schließen -->
                         <?php if ($_SESSION['user_name'] === $host['username']): ?>
-                        <form method="POST">
-                            <button type="submit" name="closeLobby" class="btn btn-close-lobby w-40 mb-2">
-                                Lobby schließen
-                            </button>
-                        </form>
-                        <form method="POST">
-                            <button type="submit" name="startGame" class="btn btn-success w-40 mb-2">
+                            <form method="POST" class="mb-1">
+                            <button type="submit" name="startGame" class="btn w-100 start-button" style="color: white;">
                                 Spiel starten
                             </button>
-                        </form>
+                            </form>
+
                         <?php endif; ?>
 
-                        <form method="POST">
-                            <button type="submit" name="leaveLobby" class="btn btn-warning w-40">
-                                Lobby verlassen
-                            </button>
-                        </form>
+
+
                     </div>
+
                 </div>
             </div>
         </div>
@@ -270,20 +342,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['startGame'])) {
     const lobbyCode = "<?php echo htmlspecialchars($lobbyCode); ?>";
 
     function loadPlayers() {
-        fetch(`start_lobby.php?action=get_players&code=${lobbyCode}`)
-            .then(response => response.json())
-            .then(players => {
-                const playerList = document.getElementById('playerList');
-                playerList.innerHTML = ''; // Leeren der Liste
+    fetch(`start_lobby.php?action=get_players&code=${lobbyCode}`)
+        .then(response => response.json())
+        .then(players => {
+            const playerList = document.getElementById('playerList');
+            playerList.innerHTML = ''; // Leeren der Liste
 
-                players.forEach(player => {
-                    const li = document.createElement('li');
-                    li.className = 'list-group-item d-flex justify-content-between align-items-center';
-                    li.innerHTML = `${player.username} ${player.is_host == 1 ? '' : ''}`;
-                    playerList.appendChild(li);
-                });
+            players.forEach(player => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                
+                // Überprüfen, ob der Spieler der Host ist
+                if (player.is_host == 1) {
+                    li.innerHTML = `${player.username} <span class="badge bg-primary text-white">Host</span>`;
+                } else {
+                    li.innerHTML = `${player.username}`;
+                }
+
+                playerList.appendChild(li);
             });
-    }
+        });
+        }
+
 
     loadPlayers();
     setInterval(loadPlayers, 1000); // Alle 5 Sekunden die Spieler aktualisieren
