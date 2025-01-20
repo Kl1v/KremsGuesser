@@ -260,6 +260,11 @@ if ($_GET['runde'] > $maxRounds) {
 
 
     <script>
+
+    document.getElementById('submit-btn').addEventListener('click', function () {
+        this.style.display = 'none';
+    });
+
     let smallMap;
     let smallMapMarker;
     let markerPosition;
@@ -285,7 +290,7 @@ if ($_GET['runde'] > $maxRounds) {
     }
 
     function calculatePoints(distance) {
-        if (distance <= 5) {
+        if (distance <= 10) {
             return 5000;
         } else if (distance >= 1000) {
             return 0;
@@ -433,10 +438,11 @@ function startTimer(duration, display) {
             if (--timer < 0) {
                 clearInterval(interval);
                 document.getElementById('submit-btn').disabled = true; // Button deaktivieren
+                document.getElementById('submit-btn').style.display = 'none';
                 setTimeout(() => {
                     window.location.href =
                         `show_score.php?lobbyCode=${lobbyCode}&runde=${currentLocationIndex + 1}`;
-                }, 5000); // 5 Sekunden Verzögerung vor der Weiterleitung
+                }, 1000); // 5 Sekunden Verzögerung vor der Weiterleitung
             }
         }, 1000);
     }

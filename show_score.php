@@ -140,6 +140,15 @@ function calculateDistance($lat1, $lon1, $lat2, $lon2) {
                 </tbody>
             </table>
         </div>
+        <?php if ($isHost): ?>
+            <div class="text-center mt-4">
+                <form action="start_next_round.php" method="POST">
+                    <input type="hidden" name="lobbyCode" value="<?php echo htmlspecialchars($lobbyCode); ?>">
+                    <input type="hidden" name="currentRound" value="<?php echo $currentRound; ?>">
+                    <button type="submit" class="btn btn-primary btn-lg">Nächste Runde starten</button>
+                </form>
+            </div>
+        <?php endif; ?>
 
         <script>
         let map;
@@ -181,12 +190,22 @@ function calculateDistance($lat1, $lon1, $lat2, $lon2) {
                 });
             });
         }
-        setTimeout(() => {
-            const nextRoundUrl =
-                `game_multiplayer.php?code=<?php echo htmlspecialchars($lobbyCode); ?>&runde=<?php echo $currentRound + 1; ?>`;
-            window.location.href = nextRoundUrl;
-        }, 20000); // 10 Sekunden
+        let currentRound = <?php echo $currentRound; ?>;
+        let lobbyCode = '<?php echo htmlspecialchars($lobbyCode); ?>';
+        let nextRoundUrl = `game_multiplayer.php?code=${lobbyCode}&runde=${currentRound + 1}`;
+
+        setInterval(() => {
+            fetch(`check_round_started.php?lobbyCode=${lobbyCode}&round=${currentRound + 1}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.started) {
+                        window.location.href = nextRoundUrl;
+                    }
+                })
+                .catch(err => console.error('Fehler beim Abrufen des Rundenstatus:', err));
+        }, 1000); // Überprüft alle Sekunde
         </script>
+    </div>
 </body>
 
 </html>
