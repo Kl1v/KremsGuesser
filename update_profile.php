@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $query = "UPDATE login SET username = ?, email = ? WHERE id = ?";
         $stmt = $conn->prepare($query);
         $stmt->bind_param("ssi", $username, $email, $userId);
+        $_SESSION['user_name'] = $username;
     }
 
     if ($stmt->execute()) {
