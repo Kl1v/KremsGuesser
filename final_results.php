@@ -51,10 +51,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Endergebnisse für Lobby <?php echo htmlspecialchars($lobbyCode); ?></title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
     <style>
     body {
         padding-top: 150px;
-        background-color: #f8f9fa;
+        background-color: #664a8d;
+    }
+
+    h1 {
+        color: white;
     }
 
     .table-container {
@@ -66,10 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     .table {
-        border-collapse: separate;
-        border-spacing: 0;
+        border-collapse: collapse;
         width: 100%;
-        border-radius: 10px;
+        border-radius: 0;
         overflow: hidden;
     }
 
@@ -103,29 +107,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         border: none;
     }
 
-    .table th:first-child,
-    .table td:first-child {
-        border-top-left-radius: 10px;
-        border-bottom-left-radius: 10px;
-    }
-
-    .table th:last-child,
-    .table td:last-child {
-        border-top-right-radius: 10px;
-        border-bottom-right-radius: 10px;
-    }
-
     #backToHome {
-        margin-top: 20px;
-        padding: 10px 20px;
-        font-size: 18px;
-        border-radius: 8px;
-        transition: background-color 0.3s, color 0.3s;
-    }
+    display: inline-block;
+    outline: 0;
+    border: none;
+    cursor: pointer;
+    padding: 0 24px;
+    border-radius: 50px;
+    min-width: 200px;
+    height: 50px;
+    font-size: 18px;
+    background-color: #fd0;
+    font-weight: 500;
+    color: #222;
+    transition: transform 0.2s ease, background-color 0.3s ease;
 
+    }
     #backToHome:hover {
-        background-color: #6610f2;
-        color: white;
+    transform: scale(1.1);
+    /* Vergrößert den Button um 10% */
+
+    background-color: rgb(255, 229, 58);
+
+    }
+    .highlight {
+        font-weight: bold;
+        color: #007bff;
+        background-color: #f8f9fa;
     }
     </style>
     <script>
@@ -149,7 +157,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
     <?php require 'navbar.php'?>
-    <div class="container">
+    <div class="container" data-aos="fade-down" data-aos-duration="500">
         <h1 class="text-center">Endergebnisse für Lobby: <?php echo htmlspecialchars($lobbyCode); ?></h1>
 
         <div class="table-container">
@@ -164,7 +172,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <tbody>
                     <?php $rank = 1; ?>
                     <?php foreach ($finalResults as $result): ?>
-                    <tr>
+                    <tr class="<?php echo $result['spielername'] === $_SESSION['user_name'] ? 'highlight' : ''; ?>">
                         <td><?php echo $rank++; ?></td>
                         <td><?php echo htmlspecialchars($result['spielername']); ?></td>
                         <td><?php echo $result['total_score']; ?></td>
@@ -180,8 +188,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
 
         <!-- Button zum Zurück zur Startseite -->
-        <button id="backToHome" class="btn btn-primary d-block mx-auto">Zurück zur Startseite</button>
+        <button id="backToHome" class="btn btn-primary d-block mx-auto mt-2">Zurück zur Startseite</button>
     </div>
 </body>
-
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        AOS.init();
+    </script>
 </html>

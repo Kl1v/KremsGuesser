@@ -348,8 +348,8 @@ document.addEventListener("DOMContentLoaded", () => {
 function startTimer(duration, display) {
     let timer = duration;
     const interval = setInterval(() => {
-        const minutes = Math.floor(timer / 60);
-        const seconds = timer % 60;
+        const minutes = Math.floor(timer / 60); // Minutenberechnung
+        const seconds = timer % 60; // Sekundenberechnung
 
         display.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 

@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
 <nav class="navbar navbar-expand-lg fixed-top" style="background-color: #1e0028;">
     <div class="container-fluid">
         <!-- Markenname -->
-        <a class="navbar-brand" href="#" style="color: #FFD700; font-weight: bold; font-size: 1.5rem;">KREMSGUESSER</a>
+        <a class="navbar-brand" href="index.php" style="color: #FFD700; font-weight: bold; font-size: 1.5rem;">KREMSGUESSER</a>
 
         <!-- Mobile Navigation Toggle -->
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
