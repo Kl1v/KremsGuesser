@@ -123,10 +123,6 @@ $stmt->close();
 
 $maxRounds = $lobbyData['rounds'];
 
-// Prüfen, ob die maximale Anzahl an Runden erreicht wurde
-if ($_GET['runde'] > $maxRounds) {
-    header("Location: final_results.php?lobbyCode=$lobbyCode");
-}
 ?>
 <!DOCTYPE html>
 <html lang="de">
