@@ -272,7 +272,7 @@ $lobbyCode = generateUniqueLobbyCode($conn);
                         <h2>Zeitlimit pro Runde</h2>
                         <input type="number" min="10" max="120" name="timeLimit" placeholder="maximal 120 Sekunden">
                     </div>
-                    <button type="submit" class="start-button">Lobby erstellen</button>
+                    <button type="submit" id="start-btn" class="start-button">Lobby erstellen</button>
                 </div>
             </form>
         </div>
@@ -280,6 +280,9 @@ $lobbyCode = generateUniqueLobbyCode($conn);
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script>
         AOS.init();
+        document.getElementById('start-btn').addEventListener('click', function () {
+        this.style.display = 'none';
+    });
     </script>
 </body>
 
