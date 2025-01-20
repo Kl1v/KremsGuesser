@@ -148,7 +148,7 @@ function calculateDistance($lat1, $lon1, $lat2, $lon2) {
                 </tbody>
             </table>
         </div>
-        <?php if ($isHost): ?>
+        <?php if ($isHost && $currentRound < (int)$maxRounds): ?>
             <div class="text-center mt-4">
                 <form action="start_next_round.php" method="POST">
                     <input type="hidden" name="lobbyCode" value="<?php echo htmlspecialchars($lobbyCode); ?>">

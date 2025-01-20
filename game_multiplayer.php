@@ -123,6 +123,7 @@ $stmt->close();
 
 $maxRounds = $lobbyData['rounds'];
 
+
 ?>
 <!DOCTYPE html>
 <html lang="de">
@@ -438,7 +439,7 @@ function startTimer(duration, display) {
                 setTimeout(() => {
                     window.location.href =
                         `show_score.php?lobbyCode=${lobbyCode}&runde=${currentLocationIndex + 1}`;
-                }, 1000); // 5 Sekunden Verzögerung vor der Weiterleitung
+                }, 2000); // 5 Sekunden Verzögerung vor der Weiterleitung
             }
         }, 1000);
     }
