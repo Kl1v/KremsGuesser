@@ -1,4 +1,5 @@
 <?php
+global $conn;
 session_start();
 require 'connection.php';
  
@@ -42,8 +43,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare("UPDATE login SET score = score + ? WHERE username = ?");
         $stmt->bind_param("is", $roundPoints, $username);
         $stmt->execute();
- 
-        if ($stmt->affected_rows > 0) {
+
+        if ($stmt->affected_rows >= 0) {
             echo json_encode(['success' => true, 'total_points' => $_SESSION['total_points']]);
         } else {
             echo json_encode(['success' => false, 'error' => 'Datenbankupdate fehlgeschlagen']);
@@ -88,6 +89,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         border: 1px solid #ccc;
         z-index: 100;
         cursor: crosshair;
+        transition: 0.3s ease-in-out;
     }
 
     #map:hover {

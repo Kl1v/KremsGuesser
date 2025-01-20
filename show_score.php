@@ -12,6 +12,14 @@ if (isset($_GET['lobbyCode'])) {
 } else {
     die("Kein Lobby-Code übergeben.");
 }
+$stmt = $conn->prepare("SELECT rounds FROM lobbies WHERE code = ?");
+$stmt->bind_param("s", $lobbyCode);
+$stmt->execute();
+$result = $stmt->get_result();
+$row = $result->fetch_assoc();
+$maxRounds = $row['rounds'] ?? null;
+$stmt->close();
+
 
 // Aktuelle Runde (standardmäßig 1, falls nicht angegeben)
 $currentRound = isset($_GET['runde']) ? (int)$_GET['runde'] : 1;
@@ -147,6 +155,12 @@ function calculateDistance($lat1, $lon1, $lat2, $lon2) {
                     <input type="hidden" name="currentRound" value="<?php echo $currentRound; ?>">
                     <button type="submit" class="btn btn-primary btn-lg">Nächste Runde starten</button>
                 </form>
+            </div>
+        <?php endif; ?>
+
+        <?php if ($currentRound === (int)$maxRounds): ?>
+            <div class="text-center mt-4">
+                <a href="final_results.php?lobbyCode=<?php echo htmlspecialchars($lobbyCode); ?>" class="btn btn-success btn-lg">Finale Ergebnisse anzeigen</a>
             </div>
         <?php endif; ?>
 

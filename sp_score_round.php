@@ -75,14 +75,19 @@ $userLocation = isset($_SESSION['user_location']) ? $_SESSION['user_location'] :
         function initMap() {
             const originalPosition = { lat: <?php echo $originalLocation['lat']; ?>, lng: <?php echo $originalLocation['lng']; ?> };
             const userPosition = { lat: <?php echo $userLocation['lat']; ?>, lng: <?php echo $userLocation['lng']; ?> };
- 
+
             const map = new google.maps.Map(document.getElementById("map"), {
                 center: originalPosition,
                 zoom: 15,
-                disableDefaultUI: true, // Benutzeroberfläche deaktivieren
-                draggable: false // Karte nicht beweglich
+                draggable: true,
+                zoomControl: true,
+                mapTypeControl: true,
+                scaleControl: true,
+                streetViewControl: true,
+                rotateControl: true,
+                fullscreenControl: true,
             });
- 
+
             // Ursprünglicher Marker mit InfoWindow
             const originalMarker = new google.maps.Marker({
                 position: originalPosition,
@@ -90,18 +95,16 @@ $userLocation = isset($_SESSION['user_location']) ? $_SESSION['user_location'] :
                 title: "Ursprüngliche Position",
                 icon: "http://maps.google.com/mapfiles/ms/icons/red-dot.png"
             });
- 
+
             const originalInfoWindow = new google.maps.InfoWindow({
-                content: "<div style='font-size: 11px;'><strong>Ursprüngliche Position</strong></div>",
-                disableAutoPan: true, // Verhindert das automatische Verschieben der Karte
-                pixelOffset: new google.maps.Size(0, -30) // Passt die Position des InfoWindows an
+                content: "<div style='font-size: 10px;'><strong>Origin</strong></div>"
             });
- 
- 
+
+
             originalMarker.addListener("click", () => {
                 originalInfoWindow.open(map, originalMarker);
             });
- 
+
             // Benutzer-Marker mit InfoWindow
             const userMarker = new google.maps.Marker({
                 position: userPosition,
@@ -109,21 +112,21 @@ $userLocation = isset($_SESSION['user_location']) ? $_SESSION['user_location'] :
                 title: "Deine Position",
                 icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
             });
- 
+
             const userInfoWindow = new google.maps.InfoWindow({
-                content: "<div style='font-size: 11px;'><strong>Ich</strong></div>"
+                content: "<div style='font-size: 10px;'><strong>Ich</strong></div>"
             });
- 
+
             userMarker.addListener("click", () => {
                 userInfoWindow.open(map, userMarker);
             });
- 
+
             // InfoWindows automatisch öffnen, um die Beschriftungen direkt zu sehen
             originalInfoWindow.open(map, originalMarker);
             userInfoWindow.open(map, userMarker);
         }
- 
- 
+
+
         window.onload = () => {
             const points = <?php echo $roundPoints; ?>;
  
